@@ -1,20 +1,65 @@
 version: '3.8'
+
 services:
-  web:
+  app:
     build: .
-    ports:
-      - "80:80"
+    container_name: zend_app
     volumes:
-      - .:/var/www/html
+      - ./:/var/www
+    working_dir: /var/www
+    expose:
+      - "9000"
     depends_on:
-      - db
-  db:
+      - mysql
+    networks:
+      - zend-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: zend_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - zend-network
+
+  mysql:
     image: mysql:8.0
-    restart: always
+    container_name: zend_mysql
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: cartorio
-      MYSQL_USER: user
-      MYSQL_PASSWORD: userpassword
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: zend_db
+      MYSQL_USER: zend_user
+      MYSQL_PASSWORD: zend_pass
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - zend-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: zend_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - zend-network
+
+volumes:
+  mysql_data:
+
+networks:
+  zend-network:
+    driver: bridge
