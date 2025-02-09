@@ -51,7 +51,11 @@ return [
                     'services' => [
                         'type' => Segment::class,
                         'options' => [
-                            'route' => '/services[/:id]',
+                            'route' => '/services[/:id][/:action]',
+                            'constraints' => [
+                                'id' => '[0-9]+',
+                                'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                            ],
                             'defaults' => [
                                 'controller' => Controller\Api\ServiceController::class,
                             ],
