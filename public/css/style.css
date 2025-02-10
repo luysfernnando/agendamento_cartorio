@@ -4,11 +4,21 @@
 
 .navbar {
     background-color: var(--brand-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.navbar-brand img {
+    filter: brightness(0) invert(1);
 }
 
 .btn-primary {
-    background-color: var(--brand-color);
-    border-color: var(--brand-color);
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
 }
 
 /* allows bootstrap to style Laminas Navigation generated menu items within the navbar */
@@ -144,8 +154,10 @@ main {
     padding-left: 1rem;
 }
 
-.form-control:focus {
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+.form-control:focus,
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
 }
 
 /* Estilos das Notificações */
@@ -168,8 +180,89 @@ main {
     border-radius: 50%;
 }
 
+/* Cards */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    transition: transform .2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+/* Ícones */
+.bi {
+    margin-right: 0.5rem;
+}
+
+/* Footer */
+.footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+.footer h5 {
+    color: #212529;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.footer ul li {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+/* Alertas */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+/* Modais */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
+    .navbar-brand {
+        margin-right: 0;
+    }
+
+    .footer {
+        text-align: center;
+    }
+
+    .footer .col-md-6:first-child {
+        margin-bottom: 2rem;
+    }
+
     .calendar .days {
         gap: 2px;
     }
@@ -184,4 +277,51 @@ main {
         width: 45px;
         height: 45px;
     }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Utilitários */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Personalização do calendário */
+input[type="date"] {
+    position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
 }

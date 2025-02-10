@@ -8,7 +8,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <?= $this->headTitle('Cartório - Sistema de Agendamentos')->setSeparator(' - ')->setAutoEscape(false) ?>
+        <?= $this->headTitle('Cartório')->setSeparator(' - ')->setAutoEscape(false) ?>
 
         <?= $this->headMeta()
             ->appendName('viewport', 'width=device-width, initial-scale=1')
@@ -38,7 +38,7 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container">
                 <a class="navbar-brand" href="<?= $this->url('home') ?>">
-                    Cartório
+                    <img src="<?= $this->basePath('img/logo.png') ?>" height="28" alt="Logo"/>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
@@ -46,28 +46,18 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="<?= $this->url('home') ?>">
-                                <i class="bi bi-house-fill"></i> Início
-                            </a>
+                            <a class="nav-link<?= $this->url('home') === $this->url() ? ' active' : '' ?>" 
+                               href="<?= $this->url('home') ?>">Home</a>
                         </li>
                         <?php if ($this->identity()): ?>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?= $this->url('appointments') ?>">
-                                    <i class="bi bi-calendar-check"></i> Meus Agendamentos
-                                </a>
+                                <a class="nav-link<?= $this->url('appointment') === $this->url() ? ' active' : '' ?>" 
+                                   href="<?= $this->url('appointment') ?>">Meus Agendamentos</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?= $this->url('services') ?>">
-                                    <i class="bi bi-card-checklist"></i> Serviços
-                                </a>
+                                <a class="nav-link<?= $this->url('appointment', ['action' => 'schedule']) === $this->url() ? ' active' : '' ?>" 
+                                   href="<?= $this->url('appointment', ['action' => 'schedule']) ?>">Agendar Serviço</a>
                             </li>
-                            <?php if ($this->isAdmin()): ?>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="<?= $this->url('admin') ?>">
-                                        <i class="bi bi-gear-fill"></i> Administração
-                                    </a>
-                                </li>
-                            <?php endif; ?>
                         <?php endif; ?>
                     </ul>
                     <ul class="navbar-nav">
@@ -115,14 +105,25 @@
             <div class="container">
                 <div class="row">
                     <div class="col-md-6">
-                        <p class="mb-0">&copy; <?= date('Y') ?> Cartório. Todos os direitos reservados.</p>
+                        <h5>Contato</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-telephone"></i> (11) 1234-5678</li>
+                            <li><i class="bi bi-envelope"></i> contato@cartorio.com.br</li>
+                            <li><i class="bi bi-geo-alt"></i> Rua Exemplo, 123 - São Paulo/SP</li>
+                        </ul>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <p class="mb-0">
-                            <a href="#" class="text-decoration-none text-muted me-3">Termos de Uso</a>
-                            <a href="#" class="text-decoration-none text-muted">Política de Privacidade</a>
-                        </p>
+                    <div class="col-md-6">
+                        <h5>Horário de Funcionamento</h5>
+                        <ul class="list-unstyled">
+                            <li>Segunda a Sexta: 8h às 17h</li>
+                            <li>Sábado: 8h às 12h</li>
+                            <li>Domingo: Fechado</li>
+                        </ul>
                     </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <small>&copy; <?= date('Y') ?> Cartório. Todos os direitos reservados.</small>
                 </div>
             </div>
         </footer>

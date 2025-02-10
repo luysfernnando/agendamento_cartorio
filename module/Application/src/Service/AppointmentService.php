@@ -7,203 +7,118 @@ namespace Application\Service;
 use Application\Entity\Appointment;
 use Application\Entity\Service;
 use Application\Entity\User;
+use Application\Repository\AppointmentRepository;
 use DateTime;
 use Doctrine\ORM\EntityManager;
-use InvalidArgumentException;
+use Exception;
+use Laminas\Authentication\AuthenticationService;
 
 class AppointmentService
 {
     private EntityManager $entityManager;
+    private AuthenticationService $authService;
     private NotificationService $notificationService;
 
     public function __construct(
         EntityManager $entityManager,
+        AuthenticationService $authService,
         NotificationService $notificationService
     ) {
         $this->entityManager = $entityManager;
+        $this->authService = $authService;
         $this->notificationService = $notificationService;
     }
 
-    public function createAppointment(array $data, User $user): Appointment
+    public function getRepository(): AppointmentRepository
     {
-        $service = $this->entityManager->find(Service::class, $data['service_id']);
-        if (!$service) {
-            throw new InvalidArgumentException('Serviço não encontrado');
+        return $this->entityManager->getRepository(Appointment::class);
+    }
+
+    public function findById(int $id): ?Appointment
+    {
+        return $this->getRepository()->find($id);
+    }
+
+    public function findByUser(User $user): array
+    {
+        return $this->getRepository()->findByUser($user);
+    }
+
+    public function findUpcomingByUser(User $user): array
+    {
+        return $this->getRepository()->findUpcomingByUser($user);
+    }
+
+    public function getAvailableTimes(Service $service, DateTime $date): array
+    {
+        return $this->getRepository()->getAvailableTimes($service, $date);
+    }
+
+    public function schedule(array $data): Appointment
+    {
+        if (!$this->authService->hasIdentity()) {
+            throw new Exception('Usuário não autenticado');
         }
 
-        if (!$service->isActive()) {
-            throw new InvalidArgumentException('Este serviço não está disponível no momento');
+        $user = $this->authService->getIdentity();
+        $service = $this->entityManager->find(Service::class, $data['service_id']);
+
+        if (!$service) {
+            throw new Exception('Serviço não encontrado');
         }
 
         $appointmentDate = new DateTime($data['appointment_date']);
-        if ($appointmentDate < new DateTime()) {
-            throw new InvalidArgumentException('A data do agendamento não pode ser no passado');
-        }
+        $appointmentTime = DateTime::createFromFormat('H:i', $data['appointment_time']);
 
-        // Verifica se já existe agendamento no mesmo horário
-        if ($this->hasConflictingAppointment($appointmentDate, $service->getDuration())) {
-            throw new InvalidArgumentException('Já existe um agendamento neste horário');
+        // Verifica se o horário está disponível
+        $conflicts = $this->getRepository()->findConflictingAppointments(
+            $service,
+            $appointmentDate,
+            $appointmentTime
+        );
+
+        if (!empty($conflicts)) {
+            throw new Exception('Horário não disponível');
         }
 
         $appointment = new Appointment();
         $appointment->setUser($user)
             ->setService($service)
             ->setAppointmentDate($appointmentDate)
+            ->setAppointmentTime($appointmentTime)
             ->setNotes($data['notes'] ?? null);
 
         $this->entityManager->persist($appointment);
         $this->entityManager->flush();
 
-        // Envia notificação de criação do agendamento
-        $this->notificationService->sendAppointmentNotification(
-            $appointment,
-            'Seu agendamento foi criado com sucesso!'
-        );
+        // Envia notificação de confirmação
+        $this->notificationService->sendAppointmentConfirmation($appointment);
 
         return $appointment;
     }
 
-    public function updateAppointment(int $id, array $data, User $user): ?Appointment
+    public function cancel(Appointment $appointment): void
     {
-        $appointment = $this->entityManager->find(Appointment::class, $id);
-        if (!$appointment) {
-            return null;
+        if (!$appointment->canBeCancelled()) {
+            throw new Exception('Este agendamento não pode ser cancelado');
         }
 
-        // Apenas o próprio usuário ou admin pode atualizar
-        if (!$this->canManageAppointment($appointment, $user)) {
-            throw new InvalidArgumentException('Você não tem permissão para atualizar este agendamento');
-        }
-
-        if (isset($data['service_id'])) {
-            $service = $this->entityManager->find(Service::class, $data['service_id']);
-            if (!$service) {
-                throw new InvalidArgumentException('Serviço não encontrado');
-            }
-            if (!$service->isActive()) {
-                throw new InvalidArgumentException('Este serviço não está disponível no momento');
-            }
-            $appointment->setService($service);
-        }
-
-        if (isset($data['appointment_date'])) {
-            $appointmentDate = new DateTime($data['appointment_date']);
-            if ($appointmentDate < new DateTime()) {
-                throw new InvalidArgumentException('A data do agendamento não pode ser no passado');
-            }
-            if ($this->hasConflictingAppointment($appointmentDate, $appointment->getService()->getDuration(), $id)) {
-                throw new InvalidArgumentException('Já existe um agendamento neste horário');
-            }
-            $appointment->setAppointmentDate($appointmentDate);
-        }
-
-        if (isset($data['notes'])) {
-            $appointment->setNotes($data['notes']);
-        }
-
-        if (isset($data['status'])) {
-            $appointment->setStatus($data['status']);
-            
-            // Envia notificação de alteração de status
-            $this->notificationService->sendAppointmentNotification(
-                $appointment,
-                "Seu agendamento foi {$data['status']}"
-            );
-        }
-
-        $this->entityManager->flush();
-
-        return $appointment;
-    }
-
-    public function getAppointment(int $id): ?Appointment
-    {
-        return $this->entityManager->find(Appointment::class, $id);
-    }
-
-    public function deleteAppointment(int $id, User $user): bool
-    {
-        $appointment = $this->entityManager->find(Appointment::class, $id);
-        if (!$appointment) {
-            return false;
-        }
-
-        // Apenas o próprio usuário ou admin pode deletar
-        if (!$this->canManageAppointment($appointment, $user)) {
-            throw new InvalidArgumentException('Você não tem permissão para cancelar este agendamento');
-        }
-
-        // Não permite cancelar agendamentos já realizados
-        if ($appointment->getStatus() === Appointment::STATUS_COMPLETED) {
-            throw new InvalidArgumentException('Não é possível cancelar um agendamento já realizado');
-        }
-
-        $appointment->setStatus(Appointment::STATUS_CANCELLED);
+        $appointment->cancel();
         $this->entityManager->flush();
 
         // Envia notificação de cancelamento
-        $this->notificationService->sendAppointmentNotification(
-            $appointment,
-            'Seu agendamento foi cancelado'
-        );
-
-        return true;
+        $this->notificationService->sendAppointmentCancellation($appointment);
     }
 
-    public function listAppointments(array $criteria = [], ?User $user = null): array
+    public function validateUserAccess(Appointment $appointment): void
     {
-        if ($user && $user->getRole() !== 'admin') {
-            $criteria['user'] = $user;
+        if (!$this->authService->hasIdentity()) {
+            throw new Exception('Usuário não autenticado');
         }
 
-        $repository = $this->entityManager->getRepository(Appointment::class);
-        return $repository->findBy($criteria, ['appointmentDate' => 'ASC']);
-    }
-
-    public function getUpcomingAppointments(?User $user = null): array
-    {
-        $criteria = [
-            'status' => [
-                Appointment::STATUS_PENDING,
-                Appointment::STATUS_CONFIRMED
-            ],
-        ];
-
-        if ($user && $user->getRole() !== 'admin') {
-            $criteria['user'] = $user;
+        $user = $this->authService->getIdentity();
+        if ($appointment->getUser()->getId() !== $user->getId()) {
+            throw new Exception('Acesso negado');
         }
-
-        $repository = $this->entityManager->getRepository(Appointment::class);
-        return $repository->findBy(
-            $criteria,
-            ['appointmentDate' => 'ASC']
-        );
-    }
-
-    private function hasConflictingAppointment(DateTime $date, int $duration, ?int $excludeId = null): bool
-    {
-        $endDate = (clone $date)->modify("+{$duration} minutes");
-        
-        $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('a')
-           ->from(Appointment::class, 'a')
-           ->where('a.status != :cancelled')
-           ->andWhere('a.appointmentDate < :endDate')
-           ->andWhere('DATE_ADD(a.appointmentDate, a.service.duration, \'minute\') > :startDate')
-           ->setParameter('cancelled', Appointment::STATUS_CANCELLED)
-           ->setParameter('startDate', $date)
-           ->setParameter('endDate', $endDate);
-
-        if ($excludeId) {
-            $qb->andWhere('a.id != :id')
-               ->setParameter('id', $excludeId);
-        }
-
-        return count($qb->getQuery()->getResult()) > 0;
-    }
-
-    private function canManageAppointment(Appointment $appointment, User $user): bool
-    {
-        return $user->getRole() === 'admin' || $appointment->getUser()->getId() === $user->getId();
     }
 } 

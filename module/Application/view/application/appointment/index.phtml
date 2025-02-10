@@ -1,0 +1,107 @@
+<?php
+$title = 'Meus Agendamentos';
+$this->headTitle($title);
+?>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+        <a href="<?= $this->url('appointment', ['action' => 'schedule']) ?>" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Novo Agendamento
+        </a>
+    </div>
+
+    <?php if (empty($appointments)): ?>
+        <div class="alert alert-info">
+            Você ainda não possui agendamentos. Clique no botão acima para agendar um serviço.
+        </div>
+    <?php else: ?>
+        <div class="row">
+            <?php foreach ($appointments as $appointment): ?>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <?= $this->escapeHtml($appointment->getService()->getName()) ?>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-calendar-event"></i>
+                                    <strong>Data:</strong>
+                                    <?= $appointment->getAppointmentDate()->format('d/m/Y') ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-clock"></i>
+                                    <strong>Horário:</strong>
+                                    <?= $appointment->getAppointmentTime()->format('H:i') ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-currency-dollar"></i>
+                                    <strong>Valor:</strong>
+                                    R$ <?= number_format($appointment->getService()->getPrice(), 2, ',', '.') ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <strong>Duração:</strong>
+                                    <?= $appointment->getService()->getDuration() ?> minutos
+                                </li>
+                                <?php if ($appointment->getNotes()): ?>
+                                    <li>
+                                        <i class="bi bi-card-text"></i>
+                                        <strong>Observações:</strong><br>
+                                        <?= nl2br($this->escapeHtml($appointment->getNotes())) ?>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <?php if ($appointment->canBeCancelled()): ?>
+                                <button type="button" 
+                                        class="btn btn-danger btn-sm w-100"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#cancelModal<?= $appointment->getId() ?>">
+                                    <i class="bi bi-x-circle"></i> Cancelar Agendamento
+                                </button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
+                                    <i class="bi bi-lock"></i> Não pode ser cancelado
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if ($appointment->canBeCancelled()): ?>
+                    <!-- Modal de Confirmação de Cancelamento -->
+                    <div class="modal fade" id="cancelModal<?= $appointment->getId() ?>" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirmar Cancelamento</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Tem certeza que deseja cancelar este agendamento?</p>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Serviço:</strong> <?= $this->escapeHtml($appointment->getService()->getName()) ?></li>
+                                        <li><strong>Data:</strong> <?= $appointment->getAppointmentDate()->format('d/m/Y') ?></li>
+                                        <li><strong>Horário:</strong> <?= $appointment->getAppointmentTime()->format('H:i') ?></li>
+                                    </ul>
+                                    <p class="text-danger mb-0">Esta ação não pode ser desfeita.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não, manter</button>
+                                    <a href="<?= $this->url('appointment', ['action' => 'cancel', 'id' => $appointment->getId()]) ?>" 
+                                       class="btn btn-danger">
+                                        Sim, cancelar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?> 

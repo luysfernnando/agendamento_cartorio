@@ -7,6 +7,7 @@ namespace Application\Factory\Service;
 use Application\Service\AppointmentService;
 use Application\Service\NotificationService;
 use Doctrine\ORM\EntityManager;
+use Laminas\Authentication\AuthenticationService;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Psr\Container\ContainerInterface;
 
@@ -15,8 +16,9 @@ class AppointmentServiceFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null): AppointmentService
     {
         $entityManager = $container->get(EntityManager::class);
+        $authService = $container->get(AuthenticationService::class);
         $notificationService = $container->get(NotificationService::class);
 
-        return new AppointmentService($entityManager, $notificationService);
+        return new AppointmentService($entityManager, $authService, $notificationService);
     }
 } 

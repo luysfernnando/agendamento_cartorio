@@ -1,0 +1,86 @@
+<?php
+$title = 'Agendar Serviço';
+$this->headTitle($title);
+
+$form = $this->form;
+$form->prepare();
+?>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+                </div>
+                <div class="card-body">
+                    <?= $this->form()->openTag($form) ?>
+                    
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('service_id')) ?>
+                        <?= $this->formElement($form->get('service_id')) ?>
+                        <?= $this->formElementErrors($form->get('service_id')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('appointment_date')) ?>
+                        <?= $this->formElement($form->get('appointment_date')) ?>
+                        <?= $this->formElementErrors($form->get('appointment_date')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('appointment_time')) ?>
+                        <?= $this->formElement($form->get('appointment_time')) ?>
+                        <?= $this->formElementErrors($form->get('appointment_time')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('notes')) ?>
+                        <?= $this->formElement($form->get('notes')) ?>
+                        <?= $this->formElementErrors($form->get('notes')) ?>
+                    </div>
+
+                    <?= $this->formElement($form->get('submit')) ?>
+                    <?= $this->form()->closeTag() ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $this->inlineScript()->captureStart(); ?>
+$(document).ready(function() {
+    // Função para carregar os horários disponíveis
+    function loadAvailableTimes() {
+        var serviceId = $('#service_id').val();
+        var date = $('#appointment_date').val();
+        
+        if (!serviceId || !date) {
+            $('#appointment_time').prop('disabled', true);
+            return;
+        }
+
+        $.get('/appointment/get-available-times', {
+            service_id: serviceId,
+            date: date
+        })
+        .done(function(response) {
+            var $timeSelect = $('#appointment_time');
+            $timeSelect.empty();
+            $timeSelect.append($('<option>').val('').text('Selecione um horário'));
+            
+            response.times.forEach(function(time) {
+                $timeSelect.append($('<option>').val(time).text(time));
+            });
+            
+            $timeSelect.prop('disabled', false);
+        })
+        .fail(function() {
+            alert('Erro ao carregar horários disponíveis. Por favor, tente novamente.');
+        });
+    }
+
+    // Eventos para recarregar horários quando serviço ou data mudam
+    $('#service_id, #appointment_date').change(loadAvailableTimes);
+});
+<?php $this->inlineScript()->captureEnd(); ?> 

@@ -1,0 +1,112 @@
+<?php
+$title = 'Detalhes do Agendamento';
+$this->headTitle($title);
+?>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+                        <a href="<?= $this->url('appointment') ?>" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="card-subtitle mb-3">Informações do Serviço</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-tag"></i>
+                                    <strong>Serviço:</strong>
+                                    <?= $this->escapeHtml($appointment->getService()->getName()) ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-currency-dollar"></i>
+                                    <strong>Valor:</strong>
+                                    R$ <?= number_format($appointment->getService()->getPrice(), 2, ',', '.') ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <strong>Duração:</strong>
+                                    <?= $appointment->getService()->getDuration() ?> minutos
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="card-subtitle mb-3">Detalhes do Agendamento</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-calendar-event"></i>
+                                    <strong>Data:</strong>
+                                    <?= $appointment->getAppointmentDate()->format('d/m/Y') ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-clock"></i>
+                                    <strong>Horário:</strong>
+                                    <?= $appointment->getAppointmentTime()->format('H:i') ?>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-calendar-check"></i>
+                                    <strong>Status:</strong>
+                                    <span class="badge <?= $appointment->getStatus() === 'cancelled' ? 'bg-danger' : 'bg-success' ?>">
+                                        <?= $appointment->getStatus() === 'cancelled' ? 'Cancelado' : 'Confirmado' ?>
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <?php if ($appointment->getNotes()): ?>
+                        <div class="mt-4">
+                            <h5 class="card-subtitle mb-3">Observações</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <?= nl2br($this->escapeHtml($appointment->getNotes())) ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($appointment->canBeCancelled()): ?>
+                        <div class="mt-4">
+                            <button type="button" 
+                                    class="btn btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#cancelModal">
+                                <i class="bi bi-x-circle"></i> Cancelar Agendamento
+                            </button>
+                        </div>
+
+                        <!-- Modal de Confirmação de Cancelamento -->
+                        <div class="modal fade" id="cancelModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Confirmar Cancelamento</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Tem certeza que deseja cancelar este agendamento?</p>
+                                        <p class="text-danger mb-0">Esta ação não pode ser desfeita.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não, manter</button>
+                                        <a href="<?= $this->url('appointment', ['action' => 'cancel', 'id' => $appointment->getId()]) ?>" 
+                                           class="btn btn-danger">
+                                            Sim, cancelar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Application\Entity;
 
 use DateTime;
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Laminas\Hydrator\ClassMethodsHydrator;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="Application\Repository\AppointmentRepository")
  * @ORM\Table(name="appointments")
  */
 class Appointment
@@ -21,7 +22,7 @@ class Appointment
 
     /**
      * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
+     * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      */
     private int $id;
@@ -39,14 +40,14 @@ class Appointment
     private Service $service;
 
     /**
-     * @ORM\Column(name="appointment_date", type="datetime")
+     * @ORM\Column(type="date")
      */
-    private DateTime $appointmentDate;
+    private DateTimeInterface $appointmentDate;
 
     /**
-     * @ORM\Column(type="string", length=20)
+     * @ORM\Column(type="time")
      */
-    private string $status = self::STATUS_PENDING;
+    private DateTimeInterface $appointmentTime;
 
     /**
      * @ORM\Column(type="text", nullable=true)
@@ -54,19 +55,23 @@ class Appointment
     private ?string $notes = null;
 
     /**
-     * @ORM\Column(name="created_at", type="datetime")
+     * @ORM\Column(type="string", length=20)
      */
-    private DateTime $createdAt;
+    private string $status = 'scheduled';
 
     /**
-     * @ORM\Column(name="updated_at", type="datetime")
+     * @ORM\Column(type="datetime")
      */
-    private DateTime $updatedAt;
+    private DateTimeInterface $createdAt;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private ?DateTimeInterface $cancelledAt = null;
 
     public function __construct()
     {
         $this->createdAt = new DateTime();
-        $this->updatedAt = new DateTime();
     }
 
     public function getId(): int
@@ -96,14 +101,36 @@ class Appointment
         return $this;
     }
 
-    public function getAppointmentDate(): DateTime
+    public function getAppointmentDate(): DateTimeInterface
     {
         return $this->appointmentDate;
     }
 
-    public function setAppointmentDate(DateTime $appointmentDate): self
+    public function setAppointmentDate(DateTimeInterface $appointmentDate): self
     {
         $this->appointmentDate = $appointmentDate;
+        return $this;
+    }
+
+    public function getAppointmentTime(): DateTimeInterface
+    {
+        return $this->appointmentTime;
+    }
+
+    public function setAppointmentTime(DateTimeInterface $appointmentTime): self
+    {
+        $this->appointmentTime = $appointmentTime;
+        return $this;
+    }
+
+    public function getNotes(): ?string
+    {
+        return $this->notes;
+    }
+
+    public function setNotes(?string $notes): self
+    {
+        $this->notes = $notes;
         return $this;
     }
 
@@ -127,31 +154,45 @@ class Appointment
         return $this;
     }
 
-    public function getNotes(): ?string
-    {
-        return $this->notes;
-    }
-
-    public function setNotes(?string $notes): self
-    {
-        $this->notes = $notes;
-        return $this;
-    }
-
-    public function getCreatedAt(): DateTime
+    public function getCreatedAt(): DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    public function getUpdatedAt(): DateTime
+    public function getCancelledAt(): ?DateTimeInterface
     {
-        return $this->updatedAt;
+        return $this->cancelledAt;
     }
 
-    public function setUpdatedAt(DateTime $updatedAt): self
+    public function setCancelledAt(?DateTimeInterface $cancelledAt): self
     {
-        $this->updatedAt = $updatedAt;
+        $this->cancelledAt = $cancelledAt;
         return $this;
+    }
+
+    public function cancel(): self
+    {
+        $this->status = 'cancelled';
+        $this->cancelledAt = new DateTime();
+        return $this;
+    }
+
+    public function canBeCancelled(): bool
+    {
+        if ($this->status === 'cancelled') {
+            return false;
+        }
+
+        $appointmentDateTime = new DateTime(
+            $this->appointmentDate->format('Y-m-d') . ' ' . 
+            $this->appointmentTime->format('H:i:s')
+        );
+
+        $now = new DateTime();
+        $diff = $appointmentDateTime->diff($now);
+
+        // Permite cancelamento até 24 horas antes do agendamento
+        return $diff->invert === 1 && ($diff->days > 0 || $diff->h >= 24);
     }
 
     public function toArray(): array

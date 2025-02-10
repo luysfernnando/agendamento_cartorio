@@ -9,6 +9,10 @@ use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Laminas\Authentication\AuthenticationService;
+use Application\Controller\AppointmentController;
+use Application\Factory\Controller\AppointmentControllerFactory;
+use Application\Factory\Form\AppointmentFormFactory;
+use Application\Form\AppointmentForm;
 
 return [
     'router' => [
@@ -63,6 +67,20 @@ return [
                     ],
                 ],
             ],
+            'appointment' => [
+                'type' => Segment::class,
+                'options' => [
+                    'route' => '/appointment[/:action[/:id]]',
+                    'constraints' => [
+                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                        'id'     => '[0-9]+',
+                    ],
+                    'defaults' => [
+                        'controller' => AppointmentController::class,
+                        'action'     => 'index',
+                    ],
+                ],
+            ],
             'api' => [
                 'type' => Literal::class,
                 'options' => [
@@ -112,6 +130,7 @@ return [
             Controller\Api\UserController::class => Factory\Controller\Api\UserControllerFactory::class,
             Controller\Api\ServiceController::class => Factory\Controller\Api\ServiceControllerFactory::class,
             Controller\Api\AppointmentController::class => Factory\Controller\Api\AppointmentControllerFactory::class,
+            AppointmentController::class => AppointmentControllerFactory::class,
         ],
     ],
     'service_manager' => [
@@ -120,6 +139,7 @@ return [
             Service\ServiceService::class => Factory\Service\ServiceServiceFactory::class,
             Service\AppointmentService::class => Factory\Service\AppointmentServiceFactory::class,
             Service\NotificationService::class => Factory\Service\NotificationServiceFactory::class,
+            AppointmentForm::class => AppointmentFormFactory::class,
         ],
         'aliases' => [
             'authentication' => AuthenticationService::class,
