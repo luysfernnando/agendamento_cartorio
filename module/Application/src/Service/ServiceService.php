@@ -16,6 +16,11 @@ class ServiceService
         $this->entityManager = $entityManager;
     }
 
+    public function findById(int $id): ?Service
+    {
+        return $this->entityManager->find(Service::class, $id);
+    }
+
     public function createService(array $data): Service
     {
         $service = new Service();
@@ -106,6 +111,11 @@ class ServiceService
     }
 
     public function getAvailableServices(): array
+    {
+        return $this->listServices(['active' => true]);
+    }
+
+    public function listActiveServices(): array
     {
         return $this->listServices(['active' => true]);
     }

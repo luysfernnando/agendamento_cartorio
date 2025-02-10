@@ -115,7 +115,7 @@ $this->headTitle($title);
                                             <td><?= $this->escapeHtml($appointment->getUser()->getName()) ?></td>
                                             <td><?= $this->escapeHtml($appointment->getService()->getName()) ?></td>
                                             <td><?= $appointment->getAppointmentDate()->format('d/m/Y') ?></td>
-                                            <td><?= $appointment->getAppointmentTime()->format('H:i') ?></td>
+                                            <td><?= $appointment->getAppointmentDate()->format('H:i') ?></td>
                                             <td>
                                                 <span class="badge bg-<?= $appointment->getStatus() === 'confirmed' ? 'success' : 'warning' ?>">
                                                     <?= ucfirst($appointment->getStatus()) ?>

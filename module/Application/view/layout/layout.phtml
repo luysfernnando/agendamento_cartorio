@@ -4,130 +4,93 @@
  */
 ?>
 <?= $this->doctype() ?>
-<html lang="pt-BR">
+<html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
         <?= $this->headTitle('Cartório')->setSeparator(' - ')->setAutoEscape(false) ?>
 
         <?= $this->headMeta()
-            ->appendName('viewport', 'width=device-width, initial-scale=1')
+            ->appendName('viewport', 'width=device-width, initial-scale=1.0')
             ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
         ?>
 
-        <!-- Styles -->
-        <?= $this->headLink([
-                'rel' => 'shortcut icon',
-                'type' => 'image/vnd.microsoft.icon',
-                'href' => $this->basePath() . '/img/favicon.ico'
-            ])
-            ->prependStylesheet('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css')
-            ->prependStylesheet('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css')
+        <?= $this->headLink(['rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'])
             ->prependStylesheet($this->basePath('css/style.css'))
+            ->prependStylesheet('https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css')
+            ->prependStylesheet('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css')
         ?>
 
-        <!-- Scripts -->
-        <?= $this->headScript()
-            ->prependFile('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js')
-            ->prependFile('https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js')
-            ->prependFile('https://code.jquery.com/jquery-3.7.1.min.js')
-            ->prependFile($this->basePath('js/app.js'))
-        ?>
+        <?= $this->headScript() ?>
     </head>
     <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark" role="navigation">
             <div class="container">
                 <a class="navbar-brand" href="<?= $this->url('home') ?>">
-                    <img src="<?= $this->basePath('img/logo.png') ?>" height="28" alt="Logo"/>
+                    Cartório
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link<?= $this->url('home') === $this->url() ? ' active' : '' ?>" 
-                               href="<?= $this->url('home') ?>">Home</a>
-                        </li>
-                        <?php if ($this->identity()): ?>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto">
+                        <?php if (!$this->identity()): ?>
                             <li class="nav-item">
-                                <a class="nav-link<?= $this->url('appointment') === $this->url() ? ' active' : '' ?>" 
-                                   href="<?= $this->url('appointment') ?>">Meus Agendamentos</a>
+                                <a class="nav-link" href="<?= $this->url('login') ?>">Entrar</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link<?= $this->url('appointment', ['action' => 'schedule']) === $this->url() ? ' active' : '' ?>" 
-                                   href="<?= $this->url('appointment', ['action' => 'schedule']) ?>">Agendar Serviço</a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                    <ul class="navbar-nav">
-                        <?php if ($this->identity()): ?>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle"></i> <?= $this->escapeHtml($this->identity()->getName()) ?>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="<?= $this->url('profile') ?>">
-                                            <i class="bi bi-person"></i> Meu Perfil
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="<?= $this->url('logout') ?>">
-                                            <i class="bi bi-box-arrow-right"></i> Sair
-                                        </a>
-                                    </li>
-                                </ul>
+                                <a class="nav-link" href="<?= $this->url('register') ?>">Cadastrar</a>
                             </li>
                         <?php else: ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?= $this->url('login') ?>">
-                                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                            <?php if ($this->identity()->getRole() === 'admin'): ?>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Administração
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                                        <li><a class="dropdown-item" href="<?= $this->url('admin', ['action' => 'users']) ?>">Usuários</a></li>
+                                        <li><a class="dropdown-item" href="<?= $this->url('admin', ['action' => 'services']) ?>">Serviços</a></li>
+                                        <li><a class="dropdown-item" href="<?= $this->url('admin', ['action' => 'appointments']) ?>">Agendamentos</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="<?= $this->url('admin') ?>">Dashboard</a></li>
+                                    </ul>
+                                </li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= $this->url('appointment') ?>">Meus Agendamentos</a>
+                                </li>
+                            <?php endif; ?>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?= $this->escapeHtml($this->identity()->getName()) ?>
                                 </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?= $this->url('register') ?>">
-                                    <i class="bi bi-person-plus"></i> Cadastrar
-                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="<?= $this->url('profile') ?>">Meu Perfil</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="<?= $this->url('logout') ?>">Sair</a></li>
+                                </ul>
                             </li>
                         <?php endif; ?>
                     </ul>
                 </div>
             </div>
         </nav>
+        <div class="container mt-4">
+            <?php
+            $flash = $this->flashMessenger();
+            $flash->setMessageOpenFormat('<div%s><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button><ul><li>')
+                  ->setMessageSeparatorString('</li><li>')
+                  ->setMessageCloseString('</li></ul></div>');
 
-        <main class="container my-4">
+            echo $flash->render('error',   ['alert', 'alert-dismissible', 'alert-danger']);
+            echo $flash->render('info',    ['alert', 'alert-dismissible', 'alert-info']);
+            echo $flash->render('default', ['alert', 'alert-dismissible', 'alert-warning']);
+            echo $flash->render('success', ['alert', 'alert-dismissible', 'alert-success']);
+            ?>
             <?= $this->content ?>
-        </main>
-
-        <footer class="bg-light py-4 mt-auto">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5>Contato</h5>
-                        <ul class="list-unstyled">
-                            <li><i class="bi bi-telephone"></i> (11) 1234-5678</li>
-                            <li><i class="bi bi-envelope"></i> contato@cartorio.com.br</li>
-                            <li><i class="bi bi-geo-alt"></i> Rua Exemplo, 123 - São Paulo/SP</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h5>Horário de Funcionamento</h5>
-                        <ul class="list-unstyled">
-                            <li>Segunda a Sexta: 8h às 17h</li>
-                            <li>Sábado: 8h às 12h</li>
-                            <li>Domingo: Fechado</li>
-                        </ul>
-                    </div>
-                </div>
-                <hr>
-                <div class="text-center">
-                    <small>&copy; <?= date('Y') ?> Cartório. Todos os direitos reservados.</small>
-                </div>
-            </div>
-        </footer>
-
-        <?= $this->inlineScript() ?>
+        </div>
+        <?= $this->inlineScript()
+            ->prependFile('https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js')
+            ->prependFile('https://code.jquery.com/jquery-3.6.0.min.js')
+        ?>
     </body>
 </html>

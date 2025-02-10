@@ -9,6 +9,7 @@ use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Laminas\Authentication\AuthenticationService;
+use Laminas\Authentication\Storage\Session as SessionStorage;
 use Application\Controller\AppointmentController;
 use Application\Factory\Controller\AppointmentControllerFactory;
 use Application\Factory\Form\AppointmentFormFactory;
@@ -32,6 +33,8 @@ use Application\Service\ServiceServiceFactory;
 use Application\Service\UserService;
 use Application\Service\UserServiceFactory;
 use Application\View\Helper\AppointmentStatusColor;
+use Application\Command\CreateAdminUserCommand;
+use Application\Command\Factory\CreateAdminUserCommandFactory;
 
 return [
     'router' => [
@@ -91,7 +94,7 @@ return [
                 'options' => [
                     'route' => '/auth[/:action]',
                     'defaults' => [
-                        'controller' => Controller\AuthController::class,
+                        'controller' => AuthController::class,
                         'action' => 'login',
                     ],
                 ],
@@ -104,6 +107,16 @@ return [
                         'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
                         'id' => '[0-9]+',
                     ],
+                    'defaults' => [
+                        'controller' => Controller\AppointmentController::class,
+                        'action' => 'index',
+                    ],
+                ],
+            ],
+            'appointments' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route' => '/appointments',
                     'defaults' => [
                         'controller' => Controller\AppointmentController::class,
                         'action' => 'index',
@@ -180,16 +193,17 @@ return [
     ],
     'service_manager' => [
         'factories' => [
-            Service\AuthService::class => Factory\Service\AuthServiceFactory::class,
-            Service\UserService::class => Factory\Service\UserServiceFactory::class,
-            Service\ServiceService::class => Factory\Service\ServiceServiceFactory::class,
-            Service\AppointmentService::class => Factory\Service\AppointmentServiceFactory::class,
-            Service\NotificationService::class => Factory\Service\NotificationServiceFactory::class,
+            Service\UserService::class => Service\Factory\UserServiceFactory::class,
+            AuthenticationService::class => Factory\Service\AuthenticationServiceFactory::class,
+            AuthService::class => Factory\Service\AuthServiceFactory::class,
+            ServiceService::class => Factory\Service\ServiceServiceFactory::class,
+            AppointmentService::class => Factory\Service\AppointmentServiceFactory::class,
+            NotificationService::class => Factory\Service\NotificationServiceFactory::class,
             Form\LoginForm::class => InvokableFactory::class,
             Form\RegisterForm::class => InvokableFactory::class,
             Form\AppointmentForm::class => Factory\Form\AppointmentFormFactory::class,
-            AuthenticationService::class => Factory\Service\AuthenticationServiceFactory::class,
             Cache\DoctrineArrayCache::class => Cache\Factory\DoctrineArrayCacheFactory::class,
+            Command\CreateAdminUserCommand::class => Command\Factory\CreateAdminUserCommandFactory::class,
         ],
         'aliases' => [
             'doctrine.cache.array' => Cache\DoctrineArrayCache::class,
@@ -224,16 +238,21 @@ return [
     ],
     'doctrine' => [
         'driver' => [
-            __NAMESPACE__ . '_driver' => [
+            'application_entities' => [
                 'class' => AnnotationDriver::class,
                 'cache' => 'array',
                 'paths' => [__DIR__ . '/../src/Entity']
             ],
             'orm_default' => [
                 'drivers' => [
-                    __NAMESPACE__ . '\Entity' => __NAMESPACE__ . '_driver'
+                    'Application\Entity' => 'application_entities'
                 ]
             ]
         ]
+    ],
+    'laminas-cli' => [
+        'commands' => [
+            'app:create-admin' => Command\CreateAdminUserCommand::class,
+        ],
     ],
 ];

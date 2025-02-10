@@ -1,0 +1,47 @@
+<?php
+$title = 'Adicionar Novo Serviço';
+$this->headTitle($title);
+?>
+
+<div class="container mt-4">
+    <h1><?= $this->escapeHtml($title) ?></h1>
+
+    <?php
+    $flashMessenger = $this->flashMessenger();
+    if ($flashMessenger->hasErrorMessages()) {
+        foreach ($flashMessenger->getErrorMessages() as $message) {
+            echo '<div class="alert alert-danger" role="alert">' . $this->escapeHtml($message) . '</div>';
+        }
+    }
+    ?>
+
+    <form method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">Nome do Serviço</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Descrição</label>
+            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="price" class="form-label">Preço</label>
+            <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="duration" class="form-label">Duração (em minutos)</label>
+            <input type="number" class="form-control" id="duration" name="duration" required>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="active" name="active" value="1" checked>
+            <label class="form-check-label" for="active">Ativo</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Serviço</button>
+        <a href="<?= $this->url('admin', ['action' => 'services']) ?>" class="btn btn-secondary">Voltar</a>
+    </form>
+</div> 

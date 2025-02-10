@@ -14,6 +14,10 @@ use Laminas\Hydrator\ClassMethodsHydrator;
  */
 class User
 {
+    public const ROLE_CLIENT = 'client';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_EMPLOYEE = 'employee';
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue(strategy="AUTO")
@@ -37,9 +41,19 @@ class User
     private string $password;
 
     /**
-     * @ORM\Column(type="string", length=20, enumType="string")
+     * @ORM\Column(type="string", length=20)
      */
-    private string $role = 'client';
+    private string $role = self::ROLE_CLIENT;
+
+    /**
+     * @ORM\Column(type="string", length=14, unique=true)
+     */
+    private string $cpf;
+
+    /**
+     * @ORM\Column(type="boolean", options={"default"=true})
+     */
+    private bool $active = true;
 
     /**
      * @ORM\Column(type="string", length=20, nullable=true)
@@ -107,7 +121,32 @@ class User
 
     public function setRole(string $role): self
     {
+        if (!in_array($role, [self::ROLE_CLIENT, self::ROLE_ADMIN, self::ROLE_EMPLOYEE])) {
+            throw new \InvalidArgumentException('Tipo de usuário inválido');
+        }
         $this->role = $role;
+        return $this;
+    }
+
+    public function getCpf(): string
+    {
+        return $this->cpf;
+    }
+
+    public function setCpf(string $cpf): self
+    {
+        $this->cpf = $cpf;
+        return $this;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): self
+    {
+        $this->active = $active;
         return $this;
     }
 

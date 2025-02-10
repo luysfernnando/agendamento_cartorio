@@ -89,7 +89,7 @@ class AppointmentForm extends Form implements InputFilterProviderInterface
 
     private function getServicesOptions(): array
     {
-        $services = $this->serviceService->getAvailableServices();
+        $services = $this->serviceService->listActiveServices();
         $options = [];
 
         foreach ($services as $service) {

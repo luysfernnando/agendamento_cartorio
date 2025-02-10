@@ -28,7 +28,7 @@ class ProfileController extends AbstractActionController
             return $this->redirect()->toRoute('login');
         }
 
-        $user = $this->userService->getUserById($this->authService->getIdentity()->getId());
+        $user = $this->userService->getUser($this->authService->getIdentity()->getId());
 
         return new ViewModel([
             'user' => $user

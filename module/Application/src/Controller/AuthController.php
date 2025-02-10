@@ -39,17 +39,22 @@ class AuthController extends AbstractActionController
 
             if ($form->isValid()) {
                 $data = $form->getData();
-                
-                $result = $this->userService->authenticate(
-                    $data['email'],
-                    $data['password']
-                );
+
+                // Configura o adaptador de autenticação
+                $this->userService->setIdentity($data['email']);
+                $this->userService->setCredential($data['password']);
+                $this->authService->setAdapter($this->userService);
+
+                // Tenta autenticar
+                $result = $this->authService->authenticate();
 
                 if ($result->isValid()) {
+                    $this->flashMessenger()->addSuccessMessage('Login realizado com sucesso!');
                     return $this->redirect()->toRoute('home');
                 }
 
-                $error = 'Credenciais inválidas';
+                $messages = $result->getMessages();
+                $error = !empty($messages) ? $messages[0] : 'Credenciais inválidas';
             }
         }
 
@@ -75,12 +80,18 @@ class AuthController extends AbstractActionController
             if ($form->isValid()) {
                 try {
                     $data = $form->getData();
-                    $this->userService->createUser($data);
 
-                    $this->flashMessenger()->addSuccessMessage(
-                        'Cadastro realizado com sucesso! Faça login para continuar.'
-                    );
-                    return $this->redirect()->toRoute('login');
+                    // Verifica se o e-mail já está em uso
+                    if ($this->userService->getUserByEmail($data['email'])) {
+                        $error = 'Este e-mail já está em uso';
+                    } else {
+                        $this->userService->createUser($data);
+
+                        $this->flashMessenger()->addSuccessMessage(
+                            'Cadastro realizado com sucesso! Faça login para continuar.'
+                        );
+                        return $this->redirect()->toRoute('login');
+                    }
                 } catch (\Exception $e) {
                     $error = $e->getMessage();
                 }

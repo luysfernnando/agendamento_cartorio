@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Application\Controller;
 
+use Application\Entity\Appointment;
 use Application\Form\AppointmentForm;
 use Application\Service\AppointmentService;
 use Application\Service\ServiceService;
 use Application\Service\UserService;
-use Laminas\Mvc\Controller\AbstractActionController;
+use DateTime;
+use Exception;
+use Laminas\Http\Response;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 
-class AppointmentController extends AbstractActionController
+class AppointmentController extends AbstractController
 {
     private AppointmentService $appointmentService;
     private ServiceService $serviceService;
@@ -28,55 +31,54 @@ class AppointmentController extends AbstractActionController
         $this->userService = $userService;
     }
 
-    public function indexAction()
+    public function indexAction(): ViewModel
     {
         $user = $this->userService->getCurrentUser();
         if (!$user) {
             return $this->redirect()->toRoute('login');
         }
 
-        $appointments = $this->appointmentService->listAppointments([], $user);
+        $appointments = $this->appointmentService->findByUser($user);
 
         return new ViewModel([
-            'appointments' => $appointments,
+            'appointments' => $appointments
         ]);
     }
 
-    public function scheduleAction()
+    public function scheduleAction(): ViewModel
     {
         $user = $this->userService->getCurrentUser();
         if (!$user) {
             return $this->redirect()->toRoute('login');
         }
 
-        $serviceId = $this->params()->fromRoute('service');
-        $service = null;
-        
-        if ($serviceId) {
-            $service = $this->serviceService->getService((int) $serviceId);
-            if (!$service || !$service->isActive()) {
-                $this->flashMessenger()->addErrorMessage('Serviço não encontrado ou indisponível.');
-                return $this->redirect()->toRoute('appointments');
-            }
-        }
-
         $form = new AppointmentForm($this->serviceService);
-        if ($service) {
-            $form->setData(['service_id' => $service->getId()]);
-        }
+        $services = $this->serviceService->listActiveServices();
 
-        $request = $this->getRequest();
-        if ($request->isPost()) {
-            $form->setData($request->getPost());
+        if ($this->getRequest()->isPost()) {
+            $form->setData($this->getRequest()->getPost());
 
             if ($form->isValid()) {
                 try {
                     $data = $form->getData();
-                    $this->appointmentService->createAppointment($data, $user);
+                    
+                    $service = $this->serviceService->findById((int) $data['service_id']);
+                    if (!$service) {
+                        throw new Exception('Serviço não encontrado');
+                    }
+
+                    $appointmentDate = new DateTime($data['appointment_date'] . ' ' . $data['appointment_time']);
+                    
+                    $this->appointmentService->schedule(
+                        $user,
+                        $service,
+                        $appointmentDate,
+                        $data['notes'] ?? null
+                    );
 
                     $this->flashMessenger()->addSuccessMessage('Agendamento realizado com sucesso!');
-                    return $this->redirect()->toRoute('appointments');
-                } catch (\Exception $e) {
+                    return $this->redirect()->toRoute('appointment');
+                } catch (Exception $e) {
                     $this->flashMessenger()->addErrorMessage($e->getMessage());
                 }
             }
@@ -84,80 +86,82 @@ class AppointmentController extends AbstractActionController
 
         return new ViewModel([
             'form' => $form,
-            'service' => $service,
+            'services' => $services
         ]);
     }
 
-    public function viewAction()
+    public function viewAction(): ViewModel
     {
         $user = $this->userService->getCurrentUser();
         if (!$user) {
             return $this->redirect()->toRoute('login');
         }
 
-        $id = $this->params()->fromRoute('id');
-        $appointment = $this->appointmentService->getAppointment((int) $id);
+        $id = (int) $this->params()->fromRoute('id');
+        $appointment = $this->appointmentService->findById($id);
 
-        if (!$appointment || ($user->getRole() !== 'admin' && $appointment->getUser()->getId() !== $user->getId())) {
-            $this->flashMessenger()->addErrorMessage('Agendamento não encontrado.');
-            return $this->redirect()->toRoute('appointments');
+        if (!$appointment || $appointment->getUser()->getId() !== $user->getId()) {
+            $this->flashMessenger()->addErrorMessage('Agendamento não encontrado');
+            return $this->redirect()->toRoute('appointment');
         }
 
         return new ViewModel([
-            'appointment' => $appointment,
+            'appointment' => $appointment
         ]);
     }
 
-    public function cancelAction()
+    public function cancelAction(): Response
     {
         $user = $this->userService->getCurrentUser();
         if (!$user) {
             return $this->redirect()->toRoute('login');
         }
 
-        $id = $this->params()->fromRoute('id');
-        
+        $id = (int) $this->params()->fromRoute('id');
+        $appointment = $this->appointmentService->findById($id);
+
+        if (!$appointment || $appointment->getUser()->getId() !== $user->getId()) {
+            $this->flashMessenger()->addErrorMessage('Agendamento não encontrado');
+            return $this->redirect()->toRoute('appointment');
+        }
+
+        if (!$appointment->canBeCancelled()) {
+            $this->flashMessenger()->addErrorMessage('Este agendamento não pode mais ser cancelado');
+            return $this->redirect()->toRoute('appointment');
+        }
+
         try {
-            $this->appointmentService->deleteAppointment((int) $id, $user);
+            $this->appointmentService->cancel($appointment);
             $this->flashMessenger()->addSuccessMessage('Agendamento cancelado com sucesso!');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->flashMessenger()->addErrorMessage($e->getMessage());
         }
 
-        return $this->redirect()->toRoute('appointments');
+        return $this->redirect()->toRoute('appointment');
     }
 
-    public function getAvailableTimesAction()
+    public function getAvailableTimesAction(): JsonModel
     {
+        $serviceId = (int) $this->params()->fromQuery('service_id');
         $date = $this->params()->fromQuery('date');
-        $serviceId = $this->params()->fromQuery('service_id');
-
-        if (!$date || !$serviceId) {
-            return new JsonModel([
-                'success' => false,
-                'message' => 'Parâmetros inválidos',
-            ]);
-        }
 
         try {
-            $service = $this->serviceService->getService((int) $serviceId);
+            $service = $this->serviceService->findById($serviceId);
             if (!$service) {
-                throw new \Exception('Serviço não encontrado');
+                throw new Exception('Serviço não encontrado');
             }
 
-            $availableTimes = $this->appointmentService->getAvailableTimes(
-                new \DateTime($date),
-                $service
-            );
+            $dateTime = new DateTime($date);
+            $times = $this->appointmentService->getAvailableTimes($service, $dateTime);
 
             return new JsonModel([
                 'success' => true,
-                'data' => $availableTimes,
+                'times' => $times
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonModel([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => $e->getMessage()
             ]);
         }
     }

@@ -6,12 +6,16 @@ namespace Application\Service;
 
 use Application\Entity\User;
 use Doctrine\ORM\EntityManager;
-use Laminas\Authentication\AuthenticationService;
+use Laminas\Authentication\Adapter\AdapterInterface;
 use Laminas\Authentication\Result;
+use Laminas\Crypt\Password\Bcrypt;
+use Laminas\Authentication\AuthenticationService;
 
-class UserService
+class UserService implements AdapterInterface
 {
     private EntityManager $entityManager;
+    private ?string $email = null;
+    private ?string $password = null;
     private AuthenticationService $authService;
 
     public function __construct(
@@ -25,14 +29,16 @@ class UserService
     public function createUser(array $data): User
     {
         $user = new User();
-        $user->setName($data['name'])
-            ->setEmail($data['email'])
-            ->setPassword($data['password'])
-            ->setPhone($data['phone'] ?? null);
-
-        if (isset($data['role'])) {
-            $user->setRole($data['role']);
-        }
+        $user->setName($data['name']);
+        $user->setEmail($data['email']);
+        $user->setPhone($data['phone'] ?? null);
+        
+        // Criptografa a senha
+        $bcrypt = new Bcrypt();
+        $user->setPassword($bcrypt->create($data['password']));
+        
+        // Define o papel (se não especificado, usa o padrão 'client')
+        $user->setRole($data['role'] ?? User::ROLE_CLIENT);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
@@ -54,7 +60,8 @@ class UserService
             $user->setEmail($data['email']);
         }
         if (isset($data['password'])) {
-            $user->setPassword($data['password']);
+            $bcrypt = new Bcrypt();
+            $user->setPassword($bcrypt->create($data['password']));
         }
         if (isset($data['phone'])) {
             $user->setPhone($data['phone']);
@@ -73,6 +80,12 @@ class UserService
         return $this->entityManager->find(User::class, $id);
     }
 
+    public function getUserByEmail(string $email): ?User
+    {
+        return $this->entityManager->getRepository(User::class)
+            ->findOneBy(['email' => $email]);
+    }
+
     public function deleteUser(int $id): bool
     {
         $user = $this->entityManager->find(User::class, $id);
@@ -86,20 +99,52 @@ class UserService
         return true;
     }
 
-    public function authenticate(string $email, string $password): Result
+    public function setIdentity($email)
     {
-        $user = $this->entityManager->getRepository(User::class)
-            ->findOneBy(['email' => $email]);
+        $this->email = $email;
+        return $this;
+    }
+
+    public function setCredential($password)
+    {
+        $this->password = $password;
+        return $this;
+    }
+
+    public function authenticate()
+    {
+        $user = $this->entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['email' => $this->email]);
 
         if (!$user) {
-            return new Result(Result::FAILURE_IDENTITY_NOT_FOUND, null);
+            return new Result(
+                Result::FAILURE_IDENTITY_NOT_FOUND,
+                null,
+                ['Usuário não encontrado']
+            );
         }
 
-        if (!$user->verifyPassword($password)) {
-            return new Result(Result::FAILURE_CREDENTIAL_INVALID, null);
+        $bcrypt = new Bcrypt();
+        if (!$bcrypt->verify($this->password, $user->getPassword())) {
+            return new Result(
+                Result::FAILURE_CREDENTIAL_INVALID,
+                null,
+                ['Senha incorreta']
+            );
         }
 
-        return new Result(Result::SUCCESS, $user);
+        return new Result(
+            Result::SUCCESS,
+            $user,
+            ['Autenticação realizada com sucesso']
+        );
+    }
+
+    public function listUsers(array $criteria = []): array
+    {
+        $repository = $this->entityManager->getRepository(User::class);
+        return $repository->findBy($criteria);
     }
 
     public function getCurrentUser(): ?User
@@ -109,11 +154,5 @@ class UserService
         }
 
         return $this->authService->getIdentity();
-    }
-
-    public function listUsers(array $criteria = []): array
-    {
-        $repository = $this->entityManager->getRepository(User::class);
-        return $repository->findBy($criteria);
     }
 } 

@@ -18,6 +18,7 @@ class AppointmentService
     private EntityManager $entityManager;
     private AuthenticationService $authService;
     private NotificationService $notificationService;
+    private AppointmentRepository $repository;
 
     public function __construct(
         EntityManager $entityManager,
@@ -27,66 +28,67 @@ class AppointmentService
         $this->entityManager = $entityManager;
         $this->authService = $authService;
         $this->notificationService = $notificationService;
+        $this->repository = $entityManager->getRepository(Appointment::class);
     }
 
     public function getRepository(): AppointmentRepository
     {
-        return $this->entityManager->getRepository(Appointment::class);
+        return $this->repository;
     }
 
     public function findById(int $id): ?Appointment
     {
-        return $this->getRepository()->find($id);
+        return $this->repository->find($id);
     }
 
     public function findByUser(User $user): array
     {
-        return $this->getRepository()->findByUser($user);
+        return $this->repository->findByUser($user);
+    }
+
+    public function listAppointments(array $criteria = [], ?User $user = null): array
+    {
+        if ($user) {
+            return $this->findByUser($user);
+        }
+
+        return $this->repository->findBy(
+            $criteria,
+            ['appointmentDate' => 'ASC']
+        );
     }
 
     public function findUpcomingByUser(User $user): array
     {
-        return $this->getRepository()->findUpcomingByUser($user);
+        return $this->repository->findUpcomingByUser($user);
     }
 
     public function getAvailableTimes(Service $service, DateTime $date): array
     {
-        return $this->getRepository()->getAvailableTimes($service, $date);
+        return $this->repository->getAvailableTimes($service, $date);
     }
 
-    public function schedule(array $data): Appointment
-    {
-        if (!$this->authService->hasIdentity()) {
-            throw new Exception('Usuário não autenticado');
-        }
-
-        $user = $this->authService->getIdentity();
-        $service = $this->entityManager->find(Service::class, $data['service_id']);
-
-        if (!$service) {
-            throw new Exception('Serviço não encontrado');
-        }
-
-        $appointmentDate = new DateTime($data['appointment_date']);
-        $appointmentTime = DateTime::createFromFormat('H:i', $data['appointment_time']);
-
-        // Verifica se o horário está disponível
-        $conflicts = $this->getRepository()->findConflictingAppointments(
+    public function schedule(
+        User $user,
+        Service $service,
+        DateTime $appointmentDate,
+        ?string $notes = null
+    ): Appointment {
+        // Verifica se há conflitos
+        $conflicts = $this->repository->findConflictingAppointments(
             $service,
-            $appointmentDate,
-            $appointmentTime
+            $appointmentDate
         );
 
         if (!empty($conflicts)) {
-            throw new Exception('Horário não disponível');
+            throw new Exception('O horário selecionado não está disponível.');
         }
 
         $appointment = new Appointment();
-        $appointment->setUser($user)
-            ->setService($service)
-            ->setAppointmentDate($appointmentDate)
-            ->setAppointmentTime($appointmentTime)
-            ->setNotes($data['notes'] ?? null);
+        $appointment->setUser($user);
+        $appointment->setService($service);
+        $appointment->setAppointmentDate($appointmentDate);
+        $appointment->setNotes($notes);
 
         $this->entityManager->persist($appointment);
         $this->entityManager->flush();
@@ -108,6 +110,11 @@ class AppointmentService
 
         // Envia notificação de cancelamento
         $this->notificationService->sendAppointmentCancellation($appointment);
+    }
+
+    public function findUpcomingAppointments(): array
+    {
+        return $this->repository->findUpcomingAppointments();
     }
 
     public function validateUserAccess(Appointment $appointment): void

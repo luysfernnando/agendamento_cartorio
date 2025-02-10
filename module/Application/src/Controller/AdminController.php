@@ -9,6 +9,7 @@ use Application\Service\ServiceService;
 use Application\Service\UserService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
+use Application\Entity\User;
 
 class AdminController extends AbstractActionController
 {
@@ -28,8 +29,11 @@ class AdminController extends AbstractActionController
 
     public function indexAction()
     {
-        if (!$this->isAdmin()) {
-            return $this->redirect()->toRoute('home');
+        if ($response = $this->requireAuth()) {
+            return $response;
+        }
+        if ($response = $this->requireAdmin()) {
+            return $response;
         }
 
         $totalUsers = count($this->userService->listUsers());
@@ -47,8 +51,11 @@ class AdminController extends AbstractActionController
 
     public function usersAction()
     {
-        if (!$this->isAdmin()) {
-            return $this->redirect()->toRoute('home');
+        if ($response = $this->requireAuth()) {
+            return $response;
+        }
+        if ($response = $this->requireAdmin()) {
+            return $response;
         }
 
         $users = $this->userService->listUsers();
@@ -60,8 +67,11 @@ class AdminController extends AbstractActionController
 
     public function servicesAction()
     {
-        if (!$this->isAdmin()) {
-            return $this->redirect()->toRoute('home');
+        if ($response = $this->requireAuth()) {
+            return $response;
+        }
+        if ($response = $this->requireAdmin()) {
+            return $response;
         }
 
         $services = $this->serviceService->listServices();
@@ -73,8 +83,11 @@ class AdminController extends AbstractActionController
 
     public function appointmentsAction()
     {
-        if (!$this->isAdmin()) {
-            return $this->redirect()->toRoute('home');
+        if ($response = $this->requireAuth()) {
+            return $response;
+        }
+        if ($response = $this->requireAdmin()) {
+            return $response;
         }
 
         $appointments = $this->appointmentService->listAppointments();
@@ -84,9 +97,48 @@ class AdminController extends AbstractActionController
         ]);
     }
 
-    private function isAdmin(): bool
+    public function addServiceAction()
     {
-        $user = $this->userService->getCurrentUser();
-        return $user && $user->getRole() === 'admin';
+        if ($response = $this->requireAuth()) {
+            return $response;
+        }
+        if ($response = $this->requireAdmin()) {
+            return $response;
+        }
+
+        $request = $this->getRequest();
+        
+        if ($request->isPost()) {
+            $data = $request->getPost()->toArray();
+            
+            try {
+                $this->serviceService->createService($data);
+                $this->flashMessenger()->addSuccessMessage('Serviço criado com sucesso!');
+                return $this->redirect()->toRoute('admin', ['action' => 'services']);
+            } catch (\Exception $e) {
+                $this->flashMessenger()->addErrorMessage('Erro ao criar serviço: ' . $e->getMessage());
+            }
+        }
+
+        return new ViewModel();
+    }
+
+    private function requireAuth()
+    {
+        if (!$this->identity()) {
+            $this->flashMessenger()->addErrorMessage('Você precisa estar autenticado para acessar esta área.');
+            return $this->redirect()->toRoute('login');
+        }
+        return null;
+    }
+
+    private function requireAdmin()
+    {
+        $user = $this->identity();
+        if (!$user || $user->getRole() !== 'admin') {
+            $this->flashMessenger()->addErrorMessage('Você não tem permissão para acessar esta área.');
+            return $this->redirect()->toRoute('home');
+        }
+        return null;
     }
 } 

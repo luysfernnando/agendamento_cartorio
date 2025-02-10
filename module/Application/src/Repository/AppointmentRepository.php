@@ -16,7 +16,7 @@ class AppointmentRepository extends EntityRepository
     {
         return $this->findBy(
             ['user' => $user],
-            ['appointmentDate' => 'ASC', 'appointmentTime' => 'ASC']
+            ['appointmentDate' => 'ASC']
         );
     }
 
@@ -25,60 +25,56 @@ class AppointmentRepository extends EntityRepository
         $qb = $this->createQueryBuilder('a');
         
         return $qb->where('a.user = :user')
-            ->andWhere('a.status != :status')
-            ->andWhere(
-                $qb->expr()->orX(
-                    $qb->expr()->gt('a.appointmentDate', ':today'),
-                    $qb->expr()->andX(
-                        $qb->expr()->eq('a.appointmentDate', ':today'),
-                        $qb->expr()->gte('a.appointmentTime', ':now')
-                    )
-                )
-            )
+            ->andWhere('a.status IN (:statuses)')
+            ->andWhere('a.appointmentDate >= :now')
             ->setParameter('user', $user)
-            ->setParameter('status', 'cancelled')
-            ->setParameter('today', new DateTime('today'))
-            ->setParameter('now', new DateTime('now'))
+            ->setParameter('statuses', [
+                Appointment::STATUS_PENDING,
+                Appointment::STATUS_CONFIRMED
+            ])
+            ->setParameter('now', new DateTime())
             ->orderBy('a.appointmentDate', 'ASC')
-            ->addOrderBy('a.appointmentTime', 'ASC')
             ->getQuery()
             ->getResult();
     }
 
+    public function findUpcomingAppointments(): array
+    {
+        $qb = $this->createQueryBuilder('a');
+        $qb->where('a.appointmentDate >= :now')
+           ->andWhere('a.status IN (:statuses)')
+           ->setParameter('now', new DateTime())
+           ->setParameter('statuses', [
+               Appointment::STATUS_PENDING,
+               Appointment::STATUS_CONFIRMED
+           ])
+           ->orderBy('a.appointmentDate', 'ASC')
+           ->setMaxResults(10);
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function findConflictingAppointments(
         Service $service,
-        DateTime $date,
-        DateTime $time
+        DateTime $appointmentDate
     ): array {
         $qb = $this->createQueryBuilder('a');
         
-        $startTime = clone $time;
-        $endTime = clone $time;
+        $startTime = clone $appointmentDate;
+        $endTime = clone $appointmentDate;
         $endTime->modify('+' . $service->getDuration() . ' minutes');
 
-        return $qb->where('a.appointmentDate = :date')
-            ->andWhere('a.status != :status')
-            ->andWhere(
-                $qb->expr()->orX(
-                    // Novo agendamento começa durante outro agendamento
-                    $qb->expr()->andX(
-                        $qb->expr()->gte('a.appointmentTime', ':startTime'),
-                        $qb->expr()->lt('a.appointmentTime', ':endTime')
-                    ),
-                    // Novo agendamento termina durante outro agendamento
-                    $qb->expr()->andX(
-                        $qb->expr()->lt('a.appointmentTime', ':startTime'),
-                        $qb->expr()->gt(
-                            'DATE_ADD(a.appointmentTime, a.service.duration, \'minute\')',
-                            ':startTime'
-                        )
-                    )
-                )
-            )
-            ->setParameter('date', $date)
-            ->setParameter('status', 'cancelled')
+        return $qb->where('a.service = :service')
+            ->andWhere('a.appointmentDate < :endTime')
+            ->andWhere('DATE_ADD(a.appointmentDate, a.service.duration, \'MINUTE\') > :startTime')
+            ->andWhere('a.status IN (:statuses)')
+            ->setParameter('service', $service)
             ->setParameter('startTime', $startTime)
             ->setParameter('endTime', $endTime)
+            ->setParameter('statuses', [
+                Appointment::STATUS_PENDING,
+                Appointment::STATUS_CONFIRMED
+            ])
             ->getQuery()
             ->getResult();
     }
@@ -106,7 +102,6 @@ class AppointmentRepository extends EntityRepository
                 // Verifica se há conflito com outros agendamentos
                 $conflicts = $this->findConflictingAppointments(
                     $service,
-                    $date,
                     $currentTime
                 );
                 
