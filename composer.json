@@ -22,7 +22,7 @@
         "laminas/laminas-mail": "^2.25",
         "laminas/laminas-mvc": "^3.7.0",
         "laminas/laminas-permissions-acl": "^2.16",
-        "laminas/laminas-session": "^2.17",
+        "laminas/laminas-session": "^2.24",
         "laminas/laminas-skeleton-installer": "^1.3.0"
     },
     "require-dev": {

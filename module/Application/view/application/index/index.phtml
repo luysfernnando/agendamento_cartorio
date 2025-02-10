@@ -2,75 +2,187 @@
 /**
  * @var Laminas\View\Renderer\PhpRenderer $this
  */
+$this->headTitle('Início');
 ?>
-<div class="p-5 mb-4 bg-light rounded-3">
-    <h1 class="display-4">Welcome to<br>Laminas MVC Skeleton Application</h1>
 
-    <p>
-        Congratulations! You have successfully installed the
-        <a href="https://github.com/laminas/laminas-mvc-skeleton" target="_blank">Laminas MVC Skeleton</a>.
-        This skeleton can serve as a simple starting point for you to begin
-        building your application on Laminas MVC.
-    </p>
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row align-items-center py-5">
+        <div class="col-md-6">
+            <h1 class="display-4 fw-bold mb-4">Agendamento de Serviços Notariais</h1>
+            <p class="lead mb-4">
+                Agende seus serviços cartorários de forma rápida e segura. 
+                Economize tempo e evite filas realizando seu agendamento online.
+            </p>
+            <?php if (!$this->identity()): ?>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="<?= $this->url('login') ?>" class="btn btn-primary btn-lg px-4 me-md-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Entrar
+                    </a>
+                    <a href="<?= $this->url('register') ?>" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="bi bi-person-plus"></i> Cadastrar
+                    </a>
+                </div>
+            <?php else: ?>
+                <a href="<?= $this->url('appointments') ?>" class="btn btn-primary btn-lg px-4">
+                    <i class="bi bi-calendar-plus"></i> Agendar Serviço
+                </a>
+            <?php endif; ?>
+        </div>
+        <div class="col-md-6">
+            <img src="<?= $this->basePath('img/hero-image.svg') ?>" alt="Ilustração" class="img-fluid">
+        </div>
+    </div>
 
-    <hr class="my-4">
+    <!-- Features Section -->
+    <div class="row py-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="fw-bold">Por que escolher nosso sistema?</h2>
+            <p class="text-muted">Oferecemos uma experiência simplificada para seus serviços cartorários</p>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="text-center">
+                <div class="feature-icon bg-primary bg-gradient text-white mb-3">
+                    <i class="bi bi-clock"></i>
+                </div>
+                <h3 class="h5">Economia de Tempo</h3>
+                <p class="text-muted">Agende seus serviços online e evite esperas desnecessárias</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="text-center">
+                <div class="feature-icon bg-primary bg-gradient text-white mb-3">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h3 class="h5">Segurança</h3>
+                <p class="text-muted">Seus dados e documentos são tratados com total segurança</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="text-center">
+                <div class="feature-icon bg-primary bg-gradient text-white mb-3">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <h3 class="h5">Notificações</h3>
+                <p class="text-muted">Receba lembretes e atualizações por e-mail e SMS</p>
+            </div>
+        </div>
+    </div>
 
-    <a class="btn btn-primary btn-lg" href="https://github.com/laminas" target="_blank">
-        Check Laminas on GitHub &raquo;
-    </a>
+    <!-- Services Section -->
+    <div class="row py-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="fw-bold">Nossos Serviços</h2>
+            <p class="text-muted">Conheça os serviços disponíveis para agendamento</p>
+        </div>
+        <?php foreach ($this->services as $service): ?>
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><?= $this->escapeHtml($service->getName()) ?></h5>
+                        <p class="card-text"><?= $this->escapeHtml($service->getDescription()) ?></p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price"><?= $this->formatCurrency($service->getPrice()) ?></span>
+                            <span class="duration">
+                                <i class="bi bi-clock"></i> 
+                                <?= $service->getDuration() ?> minutos
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <?php if ($this->identity()): ?>
+                            <a href="<?= $this->url('appointments', ['action' => 'schedule', 'service' => $service->getId()]) ?>" 
+                               class="btn btn-outline-primary w-100">
+                                <i class="bi bi-calendar-plus"></i> Agendar
+                            </a>
+                        <?php else: ?>
+                            <a href="<?= $this->url('login') ?>" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-box-arrow-in-right"></i> Entre para Agendar
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Steps Section -->
+    <div class="row py-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="fw-bold">Como Funciona</h2>
+            <p class="text-muted">Siga estes passos simples para agendar seu serviço</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="step-number mb-3">1</div>
+                <h3 class="h5">Cadastre-se</h3>
+                <p class="text-muted">Crie sua conta com e-mail e senha</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="step-number mb-3">2</div>
+                <h3 class="h5">Escolha o Serviço</h3>
+                <p class="text-muted">Selecione o serviço desejado</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="step-number mb-3">3</div>
+                <h3 class="h5">Selecione a Data</h3>
+                <p class="text-muted">Escolha o melhor horário para você</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="text-center">
+                <div class="step-number mb-3">4</div>
+                <h3 class="h5">Confirmação</h3>
+                <p class="text-muted">Receba a confirmação por e-mail/SMS</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="row py-5">
+        <div class="col-12 text-center">
+            <div class="p-5 bg-light rounded-3">
+                <h2 class="fw-bold mb-3">Pronto para começar?</h2>
+                <p class="lead mb-4">Agende seu serviço agora mesmo e economize tempo</p>
+                <?php if (!$this->identity()): ?>
+                    <a href="<?= $this->url('register') ?>" class="btn btn-primary btn-lg px-5">
+                        <i class="bi bi-person-plus"></i> Criar Conta
+                    </a>
+                <?php else: ?>
+                    <a href="<?= $this->url('appointments') ?>" class="btn btn-primary btn-lg px-5">
+                        <i class="bi bi-calendar-plus"></i> Agendar Serviço
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    <div class="col">
-        <div class="card h-100">
-            <h2 class="card-header">Follow Development</h2>
-            <div class="card-body">
-                <p>
-                    Laminas Project is under active development. If you are
-                    interested in following the development, you can check
-                    <a href="https://getlaminas.org/blog/">Laminas dev blog</a>,
-                    and <a href="https://github.com/issues?utf8=%E2%9C%93&amp;q=is:issue+org:laminas">Laminas issue tracker</a>
-                    (link requires a GitHub account). This is a great resource
-                    for staying up to date with the latest developments!
-                </p>
-            </div>
-            <div class="card-footer">
-                <a class="btn btn-primary" href="https://getlaminas.org/" target="_blank">Laminas Project Portal &raquo;</a>
-            </div>
-        </div>
-    </div>
+<style>
+.feature-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
 
-    <div class="col">
-        <div class="card h-100">
-            <h2 class="card-header">Discover Modules</h2>
-            <div class="card-body">
-                <p>
-                    Laminas MVC is a modular application.
-                    You can find multiple compatible modules on packagist.
-                </p>
-            </div>
-            <div class="card-footer">
-                <a class="btn btn-primary" href="https://packagist.org/?tags=module~zf2~zendframework~zend%20framework~zend%20framework%202~zf3~zf~zend~laminas" target="_blank">
-                    Explore Laminas Modules &raquo;</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col">
-        <div class="card h-100">
-            <h2 class="card-header">Help &amp; Support</h2>
-            <div class="card-body">
-                <p>
-                    If you need any help or support while developing with Laminas,
-                    you may reach us via <a href="https://laminas.dev/chat">chat</a> or
-                    <a href="https://discourse.laminas.dev">forum</a>.
-                    We'd love to hear any questions or feedback you may have
-                    regarding any release.
-                </p>
-            </div>
-            <div class="card-footer">
-                <a class="btn btn-primary" href="https://laminas.dev/chat" target="_blank">Ping us on chat &raquo;</a>
-            </div>
-        </div>
-    </div>
-</div>
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+</style>

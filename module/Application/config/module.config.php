@@ -8,6 +8,7 @@ use Laminas\Router\Http\Literal;
 use Laminas\Router\Http\Segment;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Laminas\Authentication\AuthenticationService;
 
 return [
     'router' => [
@@ -19,6 +20,36 @@ return [
                     'defaults' => [
                         'controller' => Controller\IndexController::class,
                         'action'     => 'index',
+                    ],
+                ],
+            ],
+            'login' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route' => '/login',
+                    'defaults' => [
+                        'controller' => Controller\AuthController::class,
+                        'action' => 'login',
+                    ],
+                ],
+            ],
+            'register' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route' => '/register',
+                    'defaults' => [
+                        'controller' => Controller\AuthController::class,
+                        'action' => 'register',
+                    ],
+                ],
+            ],
+            'logout' => [
+                'type' => Literal::class,
+                'options' => [
+                    'route' => '/logout',
+                    'defaults' => [
+                        'controller' => Controller\AuthController::class,
+                        'action' => 'logout',
                     ],
                 ],
             ],
@@ -77,6 +108,7 @@ return [
     'controllers' => [
         'factories' => [
             Controller\IndexController::class => InvokableFactory::class,
+            Controller\AuthController::class => Factory\Controller\AuthControllerFactory::class,
             Controller\Api\UserController::class => Factory\Controller\Api\UserControllerFactory::class,
             Controller\Api\ServiceController::class => Factory\Controller\Api\ServiceControllerFactory::class,
             Controller\Api\AppointmentController::class => Factory\Controller\Api\AppointmentControllerFactory::class,
@@ -88,6 +120,9 @@ return [
             Service\ServiceService::class => Factory\Service\ServiceServiceFactory::class,
             Service\AppointmentService::class => Factory\Service\AppointmentServiceFactory::class,
             Service\NotificationService::class => Factory\Service\NotificationServiceFactory::class,
+        ],
+        'aliases' => [
+            'authentication' => AuthenticationService::class,
         ],
     ],
     'view_manager' => [

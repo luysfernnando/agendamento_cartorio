@@ -1,0 +1,82 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ * @var Laminas\Form\Form $form
+ * @var string|null $error
+ */
+
+$this->headTitle('Cadastro');
+$form->prepare();
+?>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Cadastro</h2>
+
+                    <?php if ($error): ?>
+                        <div class="alert alert-danger">
+                            <?= $this->escapeHtml($error) ?>
+                        </div>
+                    <?php endif ?>
+
+                    <?= $this->form()->openTag($form) ?>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('name')) ?>
+                        <?= $this->formElement($form->get('name')) ?>
+                        <?= $this->formElementErrors($form->get('name')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('email')) ?>
+                        <?= $this->formElement($form->get('email')) ?>
+                        <?= $this->formElementErrors($form->get('email')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('phone')) ?>
+                        <?= $this->formElement($form->get('phone')) ?>
+                        <?= $this->formElementErrors($form->get('phone')) ?>
+                        <div class="form-text">
+                            Você receberá notificações por SMS neste número
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('password')) ?>
+                        <?= $this->formElement($form->get('password')) ?>
+                        <?= $this->formElementErrors($form->get('password')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('confirm_password')) ?>
+                        <?= $this->formElement($form->get('confirm_password')) ?>
+                        <?= $this->formElementErrors($form->get('confirm_password')) ?>
+                    </div>
+
+                    <?= $this->formElement($form->get('submit')) ?>
+
+                    <?= $this->form()->closeTag() ?>
+
+                    <div class="text-center mt-3">
+                        <p class="mb-0">
+                            Já tem uma conta? 
+                            <a href="<?= $this->url('login') ?>" class="text-decoration-none">
+                                Faça login
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $this->inlineScript()->captureStart() ?>
+$(document).ready(function() {
+    $('#phone').mask('(00) 00000-0000');
+});
+<?php $this->inlineScript()->captureEnd() ?> 

@@ -1,0 +1,63 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ * @var Laminas\Form\Form $form
+ * @var string|null $error
+ */
+
+$this->headTitle('Login');
+$form->prepare();
+?>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Login</h2>
+
+                    <?php if ($error): ?>
+                        <div class="alert alert-danger">
+                            <?= $this->escapeHtml($error) ?>
+                        </div>
+                    <?php endif ?>
+
+                    <?php if ($this->flashMessenger()->hasSuccessMessages()): ?>
+                        <div class="alert alert-success">
+                            <?php foreach ($this->flashMessenger()->getSuccessMessages() as $message): ?>
+                                <?= $this->escapeHtml($message) ?>
+                            <?php endforeach ?>
+                        </div>
+                    <?php endif ?>
+
+                    <?= $this->form()->openTag($form) ?>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('email')) ?>
+                        <?= $this->formElement($form->get('email')) ?>
+                        <?= $this->formElementErrors($form->get('email')) ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <?= $this->formLabel($form->get('password')) ?>
+                        <?= $this->formElement($form->get('password')) ?>
+                        <?= $this->formElementErrors($form->get('password')) ?>
+                    </div>
+
+                    <?= $this->formElement($form->get('submit')) ?>
+
+                    <?= $this->form()->closeTag() ?>
+
+                    <div class="text-center mt-3">
+                        <p class="mb-0">
+                            Ainda não tem uma conta? 
+                            <a href="<?= $this->url('register') ?>" class="text-decoration-none">
+                                Cadastre-se
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
