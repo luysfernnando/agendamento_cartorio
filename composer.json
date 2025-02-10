@@ -19,6 +19,7 @@
         "laminas/laminas-development-mode": "^3.12.0",
         "laminas/laminas-form": "^3.19",
         "laminas/laminas-hydrator": "^4.15",
+        "laminas/laminas-i18n": "^2.29",
         "laminas/laminas-mail": "^2.25",
         "laminas/laminas-mvc": "^3.7.0",
         "laminas/laminas-permissions-acl": "^2.16",

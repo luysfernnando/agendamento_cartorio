@@ -1,0 +1,236 @@
+<?php
+$title = 'Gerenciar Serviços';
+$this->headTitle($title);
+?>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+            <i class="bi bi-plus-circle"></i> Novo Serviço
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <?php if (empty($services)): ?>
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">Nenhum serviço cadastrado.</p>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Descrição</th>
+                                <th>Preço</th>
+                                <th>Duração</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($services as $service): ?>
+                                <tr>
+                                    <td><?= $this->escapeHtml($service->getName()) ?></td>
+                                    <td><?= $this->escapeHtml($service->getDescription()) ?></td>
+                                    <td>R$ <?= number_format($service->getPrice(), 2, ',', '.') ?></td>
+                                    <td><?= $service->getDuration() ?> minutos</td>
+                                    <td>
+                                        <span class="badge bg-<?= $service->isActive() ? 'success' : 'secondary' ?>">
+                                            <?= $service->isActive() ? 'Ativo' : 'Inativo' ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-info"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editServiceModal<?= $service->getId() ?>">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-<?= $service->isActive() ? 'warning' : 'success' ?>"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#toggleServiceModal<?= $service->getId() ?>">
+                                            <i class="bi bi-<?= $service->isActive() ? 'pause' : 'play' ?>"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteServiceModal<?= $service->getId() ?>">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal de Edição -->
+                                <div class="modal fade" id="editServiceModal<?= $service->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'edit-service']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $service->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Editar Serviço</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="name<?= $service->getId() ?>" class="form-label">Nome</label>
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               id="name<?= $service->getId() ?>" 
+                                                               name="name" 
+                                                               value="<?= $this->escapeHtml($service->getName()) ?>" 
+                                                               required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="description<?= $service->getId() ?>" class="form-label">Descrição</label>
+                                                        <textarea class="form-control" 
+                                                                  id="description<?= $service->getId() ?>" 
+                                                                  name="description" 
+                                                                  rows="3" 
+                                                                  required><?= $this->escapeHtml($service->getDescription()) ?></textarea>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="price<?= $service->getId() ?>" class="form-label">Preço</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">R$</span>
+                                                            <input type="text" 
+                                                                   class="form-control currency" 
+                                                                   id="price<?= $service->getId() ?>" 
+                                                                   name="price" 
+                                                                   value="<?= number_format($service->getPrice(), 2, ',', '.') ?>" 
+                                                                   required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="duration<?= $service->getId() ?>" class="form-label">Duração (minutos)</label>
+                                                        <input type="number" 
+                                                               class="form-control" 
+                                                               id="duration<?= $service->getId() ?>" 
+                                                               name="duration" 
+                                                               value="<?= $service->getDuration() ?>" 
+                                                               min="1" 
+                                                               required>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal de Ativação/Inativação -->
+                                <div class="modal fade" id="toggleServiceModal<?= $service->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'toggle-service']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $service->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">
+                                                        <?= $service->isActive() ? 'Inativar' : 'Ativar' ?> Serviço
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>
+                                                        Tem certeza que deseja <?= $service->isActive() ? 'inativar' : 'ativar' ?> 
+                                                        o serviço <strong><?= $this->escapeHtml($service->getName()) ?></strong>?
+                                                    </p>
+                                                    <?php if ($service->isActive()): ?>
+                                                        <div class="alert alert-warning">
+                                                            <i class="bi bi-exclamation-triangle"></i>
+                                                            O serviço não poderá ser agendado até ser reativado.
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-<?= $service->isActive() ? 'warning' : 'success' ?>">
+                                                        <?= $service->isActive() ? 'Inativar' : 'Ativar' ?>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal de Exclusão -->
+                                <div class="modal fade" id="deleteServiceModal<?= $service->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'delete-service']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $service->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Excluir Serviço</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>
+                                                        Tem certeza que deseja excluir o serviço 
+                                                        <strong><?= $this->escapeHtml($service->getName()) ?></strong>?
+                                                    </p>
+                                                    <div class="alert alert-danger">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                        Esta ação não poderá ser desfeita!
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger">Excluir</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Adição -->
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="<?= $this->url('admin', ['action' => 'add-service']) ?>" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Serviço</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Preço</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control currency" id="price" name="price" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Duração (minutos)</label>
+                        <input type="number" class="form-control" id="duration" name="duration" min="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

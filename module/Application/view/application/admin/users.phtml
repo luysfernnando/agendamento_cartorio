@@ -1,0 +1,272 @@
+<?php
+$title = 'Gerenciar Usuários';
+$this->headTitle($title);
+?>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="bi bi-plus-circle"></i> Novo Usuário
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <?php if (empty($users)): ?>
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">Nenhum usuário cadastrado.</p>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>CPF</th>
+                                <th>Telefone</th>
+                                <th>Perfil</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($users as $user): ?>
+                                <tr>
+                                    <td><?= $this->escapeHtml($user->getName()) ?></td>
+                                    <td><?= $this->escapeHtml($user->getEmail()) ?></td>
+                                    <td><?= $this->escapeHtml($user->getCpf()) ?></td>
+                                    <td><?= $this->escapeHtml($user->getPhone()) ?></td>
+                                    <td>
+                                        <span class="badge bg-<?= $user->getRole() === 'admin' ? 'danger' : 'primary' ?>">
+                                            <?= ucfirst($user->getRole()) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<?= $user->isActive() ? 'success' : 'secondary' ?>">
+                                            <?= $user->isActive() ? 'Ativo' : 'Inativo' ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-info"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editUserModal<?= $user->getId() ?>">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <?php if ($user->getId() !== $this->identity()->getId()): ?>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-<?= $user->isActive() ? 'warning' : 'success' ?>"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#toggleUserModal<?= $user->getId() ?>">
+                                                <i class="bi bi-<?= $user->isActive() ? 'pause' : 'play' ?>"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteUserModal<?= $user->getId() ?>">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal de Edição -->
+                                <div class="modal fade" id="editUserModal<?= $user->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'edit-user']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $user->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Editar Usuário</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="name<?= $user->getId() ?>" class="form-label">Nome</label>
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               id="name<?= $user->getId() ?>" 
+                                                               name="name" 
+                                                               value="<?= $this->escapeHtml($user->getName()) ?>" 
+                                                               required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="email<?= $user->getId() ?>" class="form-label">Email</label>
+                                                        <input type="email" 
+                                                               class="form-control" 
+                                                               id="email<?= $user->getId() ?>" 
+                                                               name="email" 
+                                                               value="<?= $this->escapeHtml($user->getEmail()) ?>" 
+                                                               required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="cpf<?= $user->getId() ?>" class="form-label">CPF</label>
+                                                        <input type="text" 
+                                                               class="form-control cpf" 
+                                                               id="cpf<?= $user->getId() ?>" 
+                                                               name="cpf" 
+                                                               value="<?= $this->escapeHtml($user->getCpf()) ?>" 
+                                                               required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="phone<?= $user->getId() ?>" class="form-label">Telefone</label>
+                                                        <input type="text" 
+                                                               class="form-control phone" 
+                                                               id="phone<?= $user->getId() ?>" 
+                                                               name="phone" 
+                                                               value="<?= $this->escapeHtml($user->getPhone()) ?>" 
+                                                               required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="role<?= $user->getId() ?>" class="form-label">Perfil</label>
+                                                        <select class="form-select" 
+                                                                id="role<?= $user->getId() ?>" 
+                                                                name="role" 
+                                                                required>
+                                                            <option value="user" <?= $user->getRole() === 'user' ? 'selected' : '' ?>>
+                                                                Usuário
+                                                            </option>
+                                                            <option value="admin" <?= $user->getRole() === 'admin' ? 'selected' : '' ?>>
+                                                                Administrador
+                                                            </option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="password<?= $user->getId() ?>" class="form-label">Nova Senha</label>
+                                                        <input type="password" 
+                                                               class="form-control" 
+                                                               id="password<?= $user->getId() ?>" 
+                                                               name="password" 
+                                                               minlength="6">
+                                                        <small class="text-muted">Deixe em branco para manter a senha atual</small>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal de Ativação/Inativação -->
+                                <div class="modal fade" id="toggleUserModal<?= $user->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'toggle-user']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $user->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">
+                                                        <?= $user->isActive() ? 'Inativar' : 'Ativar' ?> Usuário
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>
+                                                        Tem certeza que deseja <?= $user->isActive() ? 'inativar' : 'ativar' ?> 
+                                                        o usuário <strong><?= $this->escapeHtml($user->getName()) ?></strong>?
+                                                    </p>
+                                                    <?php if ($user->isActive()): ?>
+                                                        <div class="alert alert-warning">
+                                                            <i class="bi bi-exclamation-triangle"></i>
+                                                            O usuário não poderá mais acessar o sistema até ser reativado.
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-<?= $user->isActive() ? 'warning' : 'success' ?>">
+                                                        <?= $user->isActive() ? 'Inativar' : 'Ativar' ?>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal de Exclusão -->
+                                <div class="modal fade" id="deleteUserModal<?= $user->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'delete-user']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $user->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Excluir Usuário</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>
+                                                        Tem certeza que deseja excluir o usuário 
+                                                        <strong><?= $this->escapeHtml($user->getName()) ?></strong>?
+                                                    </p>
+                                                    <div class="alert alert-danger">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                        Esta ação não poderá ser desfeita!
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger">Excluir</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Adição -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="<?= $this->url('admin', ['action' => 'add-user']) ?>" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Usuário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cpf" class="form-label">CPF</label>
+                        <input type="text" class="form-control cpf" id="cpf" name="cpf" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Telefone</label>
+                        <input type="text" class="form-control phone" id="phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Perfil</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="user">Usuário</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

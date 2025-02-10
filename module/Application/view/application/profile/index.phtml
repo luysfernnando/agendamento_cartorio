@@ -1,0 +1,66 @@
+<?php
+/**
+ * @var Laminas\View\Renderer\PhpRenderer $this
+ * @var Application\Entity\User $user
+ */
+?>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Meu Perfil</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Nome:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        <?= $this->escapeHtml($user->getName()) ?>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>E-mail:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        <?= $this->escapeHtml($user->getEmail()) ?>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>CPF:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        <?= $this->escapeHtml($user->getCpf()) ?>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Telefone:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        <?= $this->escapeHtml($user->getPhone()) ?>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Data de Cadastro:</strong>
+                    </div>
+                    <div class="col-md-8">
+                        <?= $user->getCreatedAt()->format('d/m/Y H:i:s') ?>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="<?= $this->url('profile', ['action' => 'edit']) ?>" class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> Editar Perfil
+                </a>
+                <a href="<?= $this->url('profile', ['action' => 'change-password']) ?>" class="btn btn-secondary">
+                    <i class="bi bi-key"></i> Alterar Senha
+                </a>
+            </div>
+        </div>
+    </div>
+</div> 

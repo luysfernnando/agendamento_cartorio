@@ -1,0 +1,214 @@
+<?php
+$title = 'Painel Administrativo';
+$this->headTitle($title);
+?>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+    </div>
+
+    <!-- Cards de Resumo -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Usuários</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $totalUsers ?></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Serviços Ativos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $totalServices ?></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-card-checklist fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total de Agendamentos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $totalAppointments ?></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-check fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Agendamentos Pendentes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <?= count($upcomingAppointments) ?>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-clock-history fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximos Agendamentos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Próximos Agendamentos</h6>
+                    <a href="<?= $this->url('admin', ['action' => 'appointments']) ?>" class="btn btn-sm btn-primary">
+                        Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($upcomingAppointments)): ?>
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">Não há agendamentos pendentes.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Serviço</th>
+                                        <th>Data</th>
+                                        <th>Horário</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($upcomingAppointments as $appointment): ?>
+                                        <tr>
+                                            <td><?= $this->escapeHtml($appointment->getUser()->getName()) ?></td>
+                                            <td><?= $this->escapeHtml($appointment->getService()->getName()) ?></td>
+                                            <td><?= $appointment->getAppointmentDate()->format('d/m/Y') ?></td>
+                                            <td><?= $appointment->getAppointmentTime()->format('H:i') ?></td>
+                                            <td>
+                                                <span class="badge bg-<?= $appointment->getStatus() === 'confirmed' ? 'success' : 'warning' ?>">
+                                                    <?= ucfirst($appointment->getStatus()) ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="<?= $this->url('appointment', ['action' => 'view', 'id' => $appointment->getId()]) ?>" 
+                                                   class="btn btn-sm btn-info">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <?php if ($appointment->canBeCancelled()): ?>
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#cancelModal<?= $appointment->getId() ?>">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Links Rápidos -->
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Gerenciar Usuários</h6>
+                </div>
+                <div class="card-body">
+                    <p>Gerencie os usuários do sistema, seus perfis e permissões.</p>
+                    <a href="<?= $this->url('admin', ['action' => 'users']) ?>" class="btn btn-primary btn-block">
+                        <i class="bi bi-people"></i> Acessar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Gerenciar Serviços</h6>
+                </div>
+                <div class="card-body">
+                    <p>Configure os serviços disponíveis, preços e durações.</p>
+                    <a href="<?= $this->url('admin', ['action' => 'services']) ?>" class="btn btn-primary btn-block">
+                        <i class="bi bi-card-checklist"></i> Acessar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Gerenciar Agendamentos</h6>
+                </div>
+                <div class="card-body">
+                    <p>Visualize e gerencie todos os agendamentos do sistema.</p>
+                    <a href="<?= $this->url('admin', ['action' => 'appointments']) ?>" class="btn btn-primary btn-block">
+                        <i class="bi bi-calendar-check"></i> Acessar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid var(--bs-primary) !important;
+}
+.border-left-success {
+    border-left: 4px solid var(--bs-success) !important;
+}
+.border-left-info {
+    border-left: 4px solid var(--bs-info) !important;
+}
+.border-left-warning {
+    border-left: 4px solid var(--bs-warning) !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+</style> 

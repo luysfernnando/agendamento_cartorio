@@ -13,6 +13,25 @@ use Application\Controller\AppointmentController;
 use Application\Factory\Controller\AppointmentControllerFactory;
 use Application\Factory\Form\AppointmentFormFactory;
 use Application\Form\AppointmentForm;
+use Application\Controller\AdminController;
+use Application\Controller\AdminControllerFactory;
+use Application\Controller\AuthController;
+use Application\Controller\AuthControllerFactory;
+use Application\Controller\Factory\IndexControllerFactory;
+use Application\Controller\IndexController;
+use Application\Form\LoginForm;
+use Application\Form\RegisterForm;
+use Application\Service\AppointmentService;
+use Application\Service\AppointmentServiceFactory;
+use Application\Service\AuthService;
+use Application\Service\AuthServiceFactory;
+use Application\Service\NotificationService;
+use Application\Service\NotificationServiceFactory;
+use Application\Service\ServiceService;
+use Application\Service\ServiceServiceFactory;
+use Application\Service\UserService;
+use Application\Service\UserServiceFactory;
+use Application\View\Helper\AppointmentStatusColor;
 
 return [
     'router' => [
@@ -57,13 +76,23 @@ return [
                     ],
                 ],
             ],
-            'application' => [
-                'type'    => Segment::class,
+            'profile' => [
+                'type' => Segment::class,
                 'options' => [
-                    'route'    => '/application[/:action]',
+                    'route' => '/profile[/:action]',
                     'defaults' => [
-                        'controller' => Controller\IndexController::class,
-                        'action'     => 'index',
+                        'controller' => Controller\ProfileController::class,
+                        'action' => 'index',
+                    ],
+                ],
+            ],
+            'auth' => [
+                'type' => Segment::class,
+                'options' => [
+                    'route' => '/auth[/:action]',
+                    'defaults' => [
+                        'controller' => Controller\AuthController::class,
+                        'action' => 'login',
                     ],
                 ],
             ],
@@ -73,11 +102,25 @@ return [
                     'route' => '/appointment[/:action[/:id]]',
                     'constraints' => [
                         'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                        'id'     => '[0-9]+',
+                        'id' => '[0-9]+',
                     ],
                     'defaults' => [
-                        'controller' => AppointmentController::class,
-                        'action'     => 'index',
+                        'controller' => Controller\AppointmentController::class,
+                        'action' => 'index',
+                    ],
+                ],
+            ],
+            'admin' => [
+                'type' => Segment::class,
+                'options' => [
+                    'route' => '/admin[/:action[/:id]]',
+                    'constraints' => [
+                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                        'id' => '[0-9]+',
+                    ],
+                    'defaults' => [
+                        'controller' => Controller\AdminController::class,
+                        'action' => 'index',
                     ],
                 ],
             ],
@@ -125,24 +168,31 @@ return [
     ],
     'controllers' => [
         'factories' => [
-            Controller\IndexController::class => InvokableFactory::class,
+            Controller\IndexController::class => Factory\Controller\IndexControllerFactory::class,
             Controller\AuthController::class => Factory\Controller\AuthControllerFactory::class,
+            Controller\AppointmentController::class => Factory\Controller\AppointmentControllerFactory::class,
+            Controller\AdminController::class => Factory\Controller\AdminControllerFactory::class,
+            Controller\ProfileController::class => Factory\Controller\ProfileControllerFactory::class,
             Controller\Api\UserController::class => Factory\Controller\Api\UserControllerFactory::class,
             Controller\Api\ServiceController::class => Factory\Controller\Api\ServiceControllerFactory::class,
             Controller\Api\AppointmentController::class => Factory\Controller\Api\AppointmentControllerFactory::class,
-            AppointmentController::class => AppointmentControllerFactory::class,
         ],
     ],
     'service_manager' => [
         'factories' => [
+            Service\AuthService::class => Factory\Service\AuthServiceFactory::class,
             Service\UserService::class => Factory\Service\UserServiceFactory::class,
             Service\ServiceService::class => Factory\Service\ServiceServiceFactory::class,
             Service\AppointmentService::class => Factory\Service\AppointmentServiceFactory::class,
             Service\NotificationService::class => Factory\Service\NotificationServiceFactory::class,
-            AppointmentForm::class => AppointmentFormFactory::class,
+            Form\LoginForm::class => InvokableFactory::class,
+            Form\RegisterForm::class => InvokableFactory::class,
+            Form\AppointmentForm::class => Factory\Form\AppointmentFormFactory::class,
+            AuthenticationService::class => Factory\Service\AuthenticationServiceFactory::class,
+            Cache\DoctrineArrayCache::class => Cache\Factory\DoctrineArrayCacheFactory::class,
         ],
         'aliases' => [
-            'authentication' => AuthenticationService::class,
+            'doctrine.cache.array' => Cache\DoctrineArrayCache::class,
         ],
     ],
     'view_manager' => [
@@ -162,6 +212,14 @@ return [
         ],
         'strategies' => [
             'ViewJsonStrategy',
+        ],
+    ],
+    'view_helpers' => [
+        'factories' => [
+            View\Helper\AppointmentStatusColor::class => InvokableFactory::class,
+        ],
+        'aliases' => [
+            'appointmentStatusColor' => View\Helper\AppointmentStatusColor::class,
         ],
     ],
     'doctrine' => [

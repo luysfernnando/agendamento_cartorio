@@ -1,0 +1,280 @@
+<?php
+$title = 'Gerenciar Agendamentos';
+$this->headTitle($title);
+?>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><?= $this->escapeHtml($title) ?></h1>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="bi bi-funnel"></i> Filtros
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAppointmentModal">
+                <i class="bi bi-plus-circle"></i> Novo Agendamento
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <?php if (empty($appointments)): ?>
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">Nenhum agendamento encontrado.</p>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Serviço</th>
+                                <th>Data</th>
+                                <th>Horário</th>
+                                <th>Preço</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($appointments as $appointment): ?>
+                                <tr>
+                                    <td><?= $this->escapeHtml($appointment->getUser()->getName()) ?></td>
+                                    <td><?= $this->escapeHtml($appointment->getService()->getName()) ?></td>
+                                    <td><?= $appointment->getAppointmentDate()->format('d/m/Y') ?></td>
+                                    <td><?= $appointment->getAppointmentTime()->format('H:i') ?></td>
+                                    <td>R$ <?= number_format($appointment->getService()->getPrice(), 2, ',', '.') ?></td>
+                                    <td>
+                                        <span class="badge bg-<?= $this->appointmentStatusColor($appointment->getStatus()) ?>">
+                                            <?= ucfirst($appointment->getStatus()) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="<?= $this->url('appointment', ['action' => 'view', 'id' => $appointment->getId()]) ?>" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <?php if ($appointment->canBeCancelled()): ?>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#cancelAppointmentModal<?= $appointment->getId() ?>">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal de Cancelamento -->
+                                <div class="modal fade" id="cancelAppointmentModal<?= $appointment->getId() ?>" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="<?= $this->url('admin', ['action' => 'cancel-appointment']) ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $appointment->getId() ?>">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Cancelar Agendamento</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>
+                                                        Tem certeza que deseja cancelar o agendamento de 
+                                                        <strong><?= $this->escapeHtml($appointment->getUser()->getName()) ?></strong>
+                                                        para o serviço 
+                                                        <strong><?= $this->escapeHtml($appointment->getService()->getName()) ?></strong>
+                                                        no dia 
+                                                        <strong><?= $appointment->getAppointmentDate()->format('d/m/Y') ?></strong>
+                                                        às 
+                                                        <strong><?= $appointment->getAppointmentTime()->format('H:i') ?></strong>?
+                                                    </p>
+                                                    <div class="alert alert-warning">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                        Esta ação não poderá ser desfeita!
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger">Confirmar Cancelamento</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Filtros -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="<?= $this->url('admin', ['action' => 'appointments']) ?>" method="get">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filtrar Agendamentos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="user" class="form-label">Cliente</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="user" 
+                               name="user" 
+                               value="<?= isset($filters['user']) ? $this->escapeHtml($filters['user']) : '' ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="service" class="form-label">Serviço</label>
+                        <select class="form-select" id="service" name="service">
+                            <option value="">Todos</option>
+                            <?php foreach ($services as $service): ?>
+                                <option value="<?= $service->getId() ?>" 
+                                        <?= isset($filters['service']) && $filters['service'] == $service->getId() ? 'selected' : '' ?>>
+                                    <?= $this->escapeHtml($service->getName()) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="confirmed" <?= isset($filters['status']) && $filters['status'] === 'confirmed' ? 'selected' : '' ?>>
+                                Confirmado
+                            </option>
+                            <option value="cancelled" <?= isset($filters['status']) && $filters['status'] === 'cancelled' ? 'selected' : '' ?>>
+                                Cancelado
+                            </option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date_start" class="form-label">Data Inicial</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="date_start" 
+                               name="date_start" 
+                               value="<?= isset($filters['date_start']) ? $this->escapeHtml($filters['date_start']) : '' ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="date_end" class="form-label">Data Final</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="date_end" 
+                               name="date_end" 
+                               value="<?= isset($filters['date_end']) ? $this->escapeHtml($filters['date_end']) : '' ?>">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="<?= $this->url('admin', ['action' => 'appointments']) ?>" class="btn btn-secondary">Limpar</a>
+                    <button type="submit" class="btn btn-primary">Aplicar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Novo Agendamento -->
+<div class="modal fade" id="addAppointmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="<?= $this->url('admin', ['action' => 'add-appointment']) ?>" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Agendamento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">Cliente</label>
+                        <select class="form-select" id="user_id" name="user_id" required>
+                            <option value="">Selecione um cliente</option>
+                            <?php foreach ($users as $user): ?>
+                                <option value="<?= $user->getId() ?>">
+                                    <?= $this->escapeHtml($user->getName()) ?> (<?= $this->escapeHtml($user->getEmail()) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="service_id" class="form-label">Serviço</label>
+                        <select class="form-select" id="service_id" name="service_id" required>
+                            <option value="">Selecione um serviço</option>
+                            <?php foreach ($services as $service): ?>
+                                <?php if ($service->isActive()): ?>
+                                    <option value="<?= $service->getId() ?>" data-duration="<?= $service->getDuration() ?>">
+                                        <?= $this->escapeHtml($service->getName()) ?> 
+                                        (R$ <?= number_format($service->getPrice(), 2, ',', '.') ?> - 
+                                        <?= $service->getDuration() ?> minutos)
+                                    </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appointment_date" class="form-label">Data</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="appointment_date" 
+                               name="appointment_date" 
+                               min="<?= date('Y-m-d') ?>" 
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appointment_time" class="form-label">Horário</label>
+                        <select class="form-select" id="appointment_time" name="appointment_time" required disabled>
+                            <option value="">Selecione a data e o serviço primeiro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agendar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php $this->inlineScript()->captureStart() ?>
+function loadAvailableTimes() {
+    const serviceId = $('#service_id').val();
+    const date = $('#appointment_date').val();
+    const timeSelect = $('#appointment_time');
+
+    if (!serviceId || !date) {
+        timeSelect.html('<option value="">Selecione a data e o serviço primeiro</option>').prop('disabled', true);
+        return;
+    }
+
+    timeSelect.html('<option value="">Carregando horários...</option>').prop('disabled', true);
+
+    $.get('<?= $this->url('appointment', ['action' => 'get-available-times']) ?>', {
+        service_id: serviceId,
+        date: date
+    })
+    .done(function(times) {
+        if (times.length === 0) {
+            timeSelect.html('<option value="">Nenhum horário disponível</option>');
+            return;
+        }
+
+        let options = '<option value="">Selecione um horário</option>';
+        times.forEach(function(time) {
+            options += `<option value="${time}">${time}</option>`;
+        });
+
+        timeSelect.html(options).prop('disabled', false);
+    })
+    .fail(function() {
+        timeSelect.html('<option value="">Erro ao carregar horários</option>');
+    });
+}
+
+$('#service_id, #appointment_date').on('change', loadAvailableTimes);
+<?php $this->inlineScript()->captureEnd() ?> 
